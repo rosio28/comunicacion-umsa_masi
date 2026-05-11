@@ -364,11 +364,29 @@ class UsuariosController {
         $payload = Auth::requireAuth();
         Auth::requireRole($payload, ['superadmin']);
 
-        Database::getConnection()
-            ->prepare("UPDATE usuarios SET activo = false WHERE id = ?")
-            ->execute([$id]);
+        $d = json_decode(file_get_contents('php://input'), true) ?? [];
+        $permanente = !empty($d['permanente']);
 
-        Response::success(null, 'Usuario desactivado');
+        $db = Database::getConnection();
+
+        // Verificar que no se elimine a sí mismo
+        if ($id === (int)$payload['id']) {
+            Response::error('No puedes eliminar tu propia cuenta', 400);
+        }
+
+        if ($permanente) {
+            // Eliminación permanente — solo si está inactivo
+            $check = $db->prepare("SELECT activo FROM usuarios WHERE id = ?");
+            $check->execute([$id]);
+            $u = $check->fetch();
+            if (!$u) Response::error('Usuario no encontrado', 404);
+            $db->prepare("DELETE FROM usuarios WHERE id = ?")->execute([$id]);
+            Response::success(null, 'Usuario eliminado permanentemente');
+        } else {
+            // Solo desactivar
+            $db->prepare("UPDATE usuarios SET activo = false WHERE id = ?")->execute([$id]);
+            Response::success(null, 'Usuario desactivado');
+        }
     }
 }
 

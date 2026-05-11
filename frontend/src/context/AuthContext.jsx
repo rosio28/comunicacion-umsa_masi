@@ -27,12 +27,11 @@ export function AuthProvider({ children }) {
 
   // En AuthContext.jsx — el login debe devolver los datos de la respuesta
 const login = async (email, password) => {
-  const res = await authService.login(email, password)
+  const res = await api.post('/auth/login', { email, password })
   const { token, usuario, debe_cambiar_password } = res.data.data
-  localStorage.setItem('token', token)
+  localStorage.setItem('ccs_token', token)  // OJO: ccs_token, no token
   setToken(token)
   setUsuario(usuario)
-  // IMPORTANTE: retornar para que LoginPage pueda leer debe_cambiar_password
   return { debe_cambiar_password }
 }
 
