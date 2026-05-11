@@ -23,8 +23,8 @@ import {
 } from './pages/PublicPages'
 
 // Páginas admin
-import { AdminLoginPage, RecuperarPasswordPage } from './pages/admin/LoginPage'
 import DashboardPage from './pages/admin/DashboardPage'
+import { AdminLoginPage, RecuperarPasswordPage, ResetPasswordPage } from './pages/admin/LoginPage'
 import {
   AdminNoticiasPage, NoticiaFormPage,
   AdminDocentesPage,
@@ -115,6 +115,7 @@ export default function App() {
             <Route path="/admin/tramites"                element={<RequireAuth><AdminLayout><AdminTramitesPage /></AdminLayout></RequireAuth>} />
             <Route path="/admin/institucional"           element={<RequireAuth><AdminLayout><AdminInstitucionalPage /></AdminLayout></RequireAuth>} />
             <Route path="/admin/usuarios"                element={<RequireAuth><AdminLayout><AdminUsuariosPage /></AdminLayout></RequireAuth>} />
+            <Route path="/admin/reset" element={<ResetPasswordPage />} />
 
             {/* 404 */}
             <Route path="*" element={
