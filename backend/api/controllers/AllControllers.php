@@ -161,57 +161,214 @@ class ContactoController {
 
 // ─── USUARIOS ──────────────────────────────────────────────
 class UsuariosController {
-    public function index(): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['superadmin']);
-        Response::success(Database::getConnection()->query("SELECT id,nombre,email,rol,activo,avatar_url,horas_trabajo,creado_en FROM usuarios ORDER BY creado_en DESC")->fetchAll());
+
+    // ─────────────────────────────────────────────
+    // FIX UTF-8 / WINDOWS
+    // ─────────────────────────────────────────────
+    private static function sinTildes(string $s): string {
+        $from = ['á','é','í','ó','ú','Á','É','Í','Ó','Ú','ñ','Ñ','ü','Ü'];
+        $to   = ['a','e','i','o','u','A','E','I','O','U','n','N','u','U'];
+        return str_replace($from, $to, $s);
     }
+
+    // ─────────────────────────────────────────────
+    // LISTAR USUARIOS
+    // ─────────────────────────────────────────────
+    public function index(): void {
+        $payload = Auth::requireAuth();
+        Auth::requireRole($payload, ['superadmin']);
+
+        $stmt = Database::getConnection()->query(
+            "SELECT id, nombre, email, rol, activo, avatar_url,
+                    ci, primer_apellido, segundo_apellido, telefono,
+                    horas_trabajo, debe_cambiar_password, creado_en
+             FROM usuarios ORDER BY creado_en DESC"
+        );
+        
+
+        Response::success($stmt->fetchAll());
+    }
+
+    // ─────────────────────────────────────────────
+    // CREAR USUARIO
+    // ─────────────────────────────────────────────
     public function store(): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['superadmin']);
+        $payload = Auth::requireAuth();
+        Auth::requireRole($payload, ['superadmin']);
+
         $d = json_decode(file_get_contents('php://input'), true) ?? [];
-        if (empty($d['nombre'])||empty($d['email'])||empty($d['rol'])) Response::error('Datos incompletos');
-        $tempPass = bin2hex(random_bytes(6));
-        $hash     = password_hash($tempPass, PASSWORD_BCRYPT, ['cost'=>12]);
+
+        if (empty($d['nombre']) || empty($d['email']) || empty($d['rol']) ||
+            empty($d['ci']) || empty($d['primer_apellido'])) {
+            Response::error('Nombre, email, rol, CI y primer apellido son obligatorios');
+        }
+
+        // ── FIX PASSWORD GENERATION ──
+        $nombreNorm   = self::sinTildes(trim($d['nombre']));
+        $apellidoNorm = self::sinTildes(trim($d['primer_apellido']));
+
+        $inicialNombre   = strtoupper(mb_substr($nombreNorm, 0, 1, 'UTF-8'));
+        $inicialApellido = strtoupper(mb_substr($apellidoNorm, 0, 1, 'UTF-8'));
+
+        $tempPass = trim($d['ci']) . $inicialNombre . $inicialApellido;
+
+        $hash = password_hash($tempPass, PASSWORD_BCRYPT, ['cost' => 12]);
+
         $db = Database::getConnection();
+
         try {
-            $stmt = $db->prepare("INSERT INTO usuarios (nombre,email,password_hash,rol) VALUES (?,?,?,?) RETURNING id");
-            $stmt->execute([$d['nombre'],$d['email'],$hash,$d['rol']]);
+            $stmt = $db->prepare(
+                "INSERT INTO usuarios
+                    (nombre, email, password_hash, rol, ci,
+                     primer_apellido, segundo_apellido, telefono,
+                     debe_cambiar_password)
+                 VALUES (?,?,?,?,?,?,?,?,true) RETURNING id"
+            );
+
+            $stmt->execute([
+                trim($d['nombre']),
+                trim($d['email']),
+                $hash,
+                $d['rol'],
+                trim($d['ci']),
+                trim($d['primer_apellido']),
+                trim($d['segundo_apellido'] ?? ''),
+                trim($d['telefono'] ?? ''),
+            ]);
+
             $nuevo = $stmt->fetch();
-            Mailer::send($d['email'],$d['nombre'],'Bienvenido al panel CCS UMSA',"<p>Tu cuenta fue creada.</p><p><strong>Email:</strong> {$d['email']}<br><strong>Contraseña temporal:</strong> $tempPass</p>");
-            Response::success(['id'=>$nuevo['id'],'temp_password'=>$tempPass],'Usuario creado',201);
+
+            Mailer::send(
+                $d['email'],
+                $d['nombre'],
+                'Tu cuenta en el Panel CCS UMSA fue creada',
+                "<p>Hola <strong>{$d['nombre']}</strong>,</p>
+                 <p>Tu cuenta fue creada.</p>
+                 <p><strong>Correo:</strong> {$d['email']}<br>
+                 <strong>Contraseña temporal:</strong>
+                 <code style='background:#f4f4f4;padding:4px 8px;border-radius:4px;font-size:16px;'>$tempPass</code></p>
+                 <p style='color:#C0392B;'><strong>⚠ Debes cambiarla al ingresar.</strong></p>"
+            );
+            error_log("[DEBUG] tempPass generado: " . $tempPass);
+            error_log("[DEBUG] hash generado: " . $hash);
+
+            Response::success(
+                ['id' => $nuevo['id'], 'temp_password' => $tempPass],
+                'Usuario creado',
+                201
+            );
+
         } catch (\PDOException $e) {
-            if (str_contains($e->getMessage(),'unique')||str_contains($e->getMessage(),'duplicate')) Response::error('El correo ya existe');
-            Response::error('Error: '.$e->getMessage(),500);
+            if (str_contains($e->getMessage(), 'unique') ||
+                str_contains($e->getMessage(), 'duplicate')) {
+                Response::error('El correo ya está registrado');
+            }
+
+            Response::error('Error al crear usuario: ' . $e->getMessage(), 500);
         }
     }
+
+    // ─────────────────────────────────────────────
+    // ACTUALIZAR USUARIO
+    // ─────────────────────────────────────────────
     public function update(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['superadmin']);
-        $d = json_decode(file_get_contents('php://input'), true) ?? [];
+        $payload = Auth::requireAuth();
+        Auth::requireRole($payload, ['superadmin']);
+
+        $d  = json_decode(file_get_contents('php://input'), true) ?? [];
         $db = Database::getConnection();
+
         $fields = [];
-        if (!empty($d['nombre']))  $fields['nombre'] = $d['nombre'];
-        if (!empty($d['rol']))     $fields['rol']    = $d['rol'];
-        if (isset($d['activo']))   $fields['activo'] = $d['activo'] ? 'true' : 'false';
-        updateIfNotEmpty($db, 'usuarios', $id, $fields);
-        $db->prepare("UPDATE usuarios SET actualizado_en=NOW() WHERE id=?")->execute([$id]);
-        Response::success(null,'Usuario actualizado');
+
+        if (!empty($d['nombre']))           $fields['nombre']           = trim($d['nombre']);
+        if (!empty($d['ci']))               $fields['ci']               = trim($d['ci']);
+        if (!empty($d['primer_apellido']))  $fields['primer_apellido']  = trim($d['primer_apellido']);
+        if (isset($d['segundo_apellido']))  $fields['segundo_apellido'] = trim($d['segundo_apellido']);
+        if (isset($d['telefono']))          $fields['telefono']         = trim($d['telefono']);
+        if (!empty($d['rol']))              $fields['rol']              = $d['rol'];
+        if (isset($d['activo']))            $fields['activo']           = $d['activo'] ? 'true' : 'false';
+
+        if (!empty($fields)) {
+            $sets = implode(', ', array_map(fn($k) => "$k = ?", array_keys($fields)));
+            $params = array_values($fields);
+            $params[] = $id;
+
+            $db->prepare("UPDATE usuarios SET $sets, actualizado_en = NOW() WHERE id = ?")
+               ->execute($params);
+        }
+
+        Response::success(null, 'Usuario actualizado');
     }
+
+    // ─────────────────────────────────────────────
+    // RESET PASSWORD
+    // ─────────────────────────────────────────────
     public function resetPasswordAdmin(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['superadmin']);
+        $payload = Auth::requireAuth();
+        Auth::requireRole($payload, ['superadmin']);
+
         $d = json_decode(file_get_contents('php://input'), true) ?? [];
-        $newPass = trim($d['nueva_password'] ?? '');
-        if (strlen($newPass) < 6) Response::error('Mínimo 6 caracteres');
-        $hash = password_hash($newPass, PASSWORD_BCRYPT, ['cost'=>12]);
+
         $db = Database::getConnection();
-        $u = $db->prepare("SELECT nombre,email FROM usuarios WHERE id=?"); $u->execute([$id]); $usr = $u->fetch();
-        if (!$usr) Response::error('Usuario no encontrado',404);
-        $db->prepare("UPDATE usuarios SET password_hash=?,actualizado_en=NOW() WHERE id=?")->execute([$hash,$id]);
-        Mailer::send($usr['email'],$usr['nombre'],'Tu contraseña fue actualizada — CCS UMSA',"<p>Tu nueva contraseña es: <strong>$newPass</strong></p><p>Cámbiala al iniciar sesión.</p>");
-        Response::success(null,'Contraseña actualizada');
+
+        $u = $db->prepare("SELECT nombre, email, ci, primer_apellido FROM usuarios WHERE id = ?");
+        $u->execute([$id]);
+        $usr = $u->fetch();
+
+        if (!$usr) Response::error('Usuario no encontrado', 404);
+
+        $newPass = trim($d['nueva_password'] ?? '');
+
+        if (!$newPass) {
+            $nombreNorm   = self::sinTildes(trim($usr['nombre']));
+            $apellidoNorm = self::sinTildes(trim($usr['primer_apellido'] ?? ''));
+
+            $inicialNombre   = strtoupper(mb_substr($nombreNorm, 0, 1, 'UTF-8'));
+            $inicialApellido = strtoupper(mb_substr($apellidoNorm, 0, 1, 'UTF-8'));
+
+            $newPass = ($usr['ci'] ?? 'TEMP') . $inicialNombre . $inicialApellido;
+        }
+
+        if (strlen($newPass) < 4) {
+            Response::error('Contraseña demasiado corta');
+        }
+
+        $hash = password_hash($newPass, PASSWORD_BCRYPT, ['cost' => 12]);
+
+        $db->prepare("
+            UPDATE usuarios
+            SET password_hash = ?,
+                debe_cambiar_password = true,
+                actualizado_en = NOW()
+            WHERE id = ?
+        ")->execute([$hash, $id]);
+
+        Mailer::send(
+            $usr['email'],
+            $usr['nombre'],
+            'Contraseña restablecida — CCS UMSA',
+            "<p>Hola <strong>{$usr['nombre']}</strong>,</p>
+             <p>Tu contraseña fue restablecida.</p>
+             <p><strong>Nueva contraseña:</strong>
+             <code style='background:#f4f4f4;padding:4px 8px;border-radius:4px;font-size:16px;'>$newPass</code></p>
+             <p style='color:#C0392B;'><strong>⚠ Debes cambiarla al iniciar sesión.</strong></p>"
+        );
+
+        Response::success(['nueva_password' => $newPass], 'Contraseña restablecida');
     }
+
+    // ─────────────────────────────────────────────
+    // ELIMINAR USUARIO
+    // ─────────────────────────────────────────────
     public function destroy(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['superadmin']);
-        Database::getConnection()->prepare("UPDATE usuarios SET activo=false WHERE id=?")->execute([$id]);
-        Response::success(null,'Usuario desactivado');
+        $payload = Auth::requireAuth();
+        Auth::requireRole($payload, ['superadmin']);
+
+        Database::getConnection()
+            ->prepare("UPDATE usuarios SET activo = false WHERE id = ?")
+            ->execute([$id]);
+
+        Response::success(null, 'Usuario desactivado');
     }
 }
 

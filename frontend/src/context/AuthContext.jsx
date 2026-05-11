@@ -25,14 +25,16 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = useCallback(async (email, password) => {
-    const res = await api.post('/auth/login', { email, password })
-    const { token: newToken, usuario: user } = res.data.data
-    localStorage.setItem('ccs_token', newToken)
-    setToken(newToken)
-    setUsuario(user)
-    return user
-  }, [])
+  // En AuthContext.jsx — el login debe devolver los datos de la respuesta
+const login = async (email, password) => {
+  const res = await authService.login(email, password)
+  const { token, usuario, debe_cambiar_password } = res.data.data
+  localStorage.setItem('token', token)
+  setToken(token)
+  setUsuario(usuario)
+  // IMPORTANTE: retornar para que LoginPage pueda leer debe_cambiar_password
+  return { debe_cambiar_password }
+}
 
   const logout = useCallback(() => {
     localStorage.removeItem('ccs_token')

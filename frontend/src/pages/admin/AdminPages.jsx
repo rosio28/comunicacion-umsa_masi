@@ -836,49 +836,316 @@ export function AdminTramitesPage() {
 // USUARIOS
 // ============================================================
 export function AdminUsuariosPage() {
-  const qc=useQueryClient(); const [createModal,setCreateModal]=useState(false); const [passModal,setPassModal]=useState(null); const [showPass,setShowPass]=useState(false)
-  const {data,isLoading}=useQuery({queryKey:['usr-admin'],queryFn:usuariosService.getAll}); const list=data?.data?.data||[]
-  const {register:rC,handleSubmit:hC,reset:resetC}=useForm()
-  const {register:rP,handleSubmit:hP,reset:resetP}=useForm()
-  const createMut=useMutation({mutationFn:usuariosService.create,onSuccess:res=>{qc.invalidateQueries(['usr-admin']);const tmp=res.data?.data?.temp_password;toast.success(`Usuario creado${tmp?`. Contraseña temporal: ${tmp}`:''}`);setCreateModal(false);resetC()},onError:e=>toast.error(e.response?.data?.message||'Error')})
-  const updateMut=useMutation({mutationFn:({id,...d})=>usuariosService.update(id,d),onSuccess:()=>{qc.invalidateQueries(['usr-admin']);toast.success('Actualizado')}})
-  const passMut=useMutation({mutationFn:({id,nueva_password})=>api.post(`/usuarios/${id}/reset-password`,{nueva_password}),onSuccess:()=>{toast.success('Contraseña actualizada');setPassModal(null);resetP()},onError:e=>toast.error(e.response?.data?.message||'Error')})
+  const qc = useQueryClient()
+  const [createModal, setCreateModal] = useState(false)
+  const [editModal, setEditModal]     = useState(null)   // usuario a editar
+  const [passModal, setPassModal]     = useState(null)
+  const [showPass, setShowPass]       = useState(false)
+  const [showNewPass, setShowNewPass] = useState(false)
+  const [createdPass, setCreatedPass] = useState(null)   // contraseña generada, para mostrarla
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['usr-admin'],
+    queryFn: usuariosService.getAll,
+  })
+  const list = data?.data?.data || []
+
+  const { register: rC, handleSubmit: hC, reset: resetC, watch: watchC } = useForm()
+  const { register: rE, handleSubmit: hE, reset: resetE }                = useForm()
+  const { register: rP, handleSubmit: hP, reset: resetP }                = useForm()
+
+  // Previsualizar contraseña mientras escribe el formulario de creación
+  const ci             = watchC('ci') || ''
+  const nombre         = watchC('nombre') || ''
+  const primerApellido = watchC('primer_apellido') || ''
+  const passPreview    = ci && nombre && primerApellido
+    ? `${ci.trim()}${nombre.trim()[0]?.toUpperCase() || ''}${primerApellido.trim()[0]?.toUpperCase() || ''}`
+    : ''
+
+  const createMut = useMutation({
+    mutationFn: usuariosService.create,
+    onSuccess: res => {
+      qc.invalidateQueries(['usr-admin'])
+      const tmp = res.data?.data?.temp_password
+      setCreatedPass(tmp)   // mostrar contraseña generada
+      resetC()
+    },
+    onError: e => toast.error(e.response?.data?.message || 'Error al crear usuario'),
+  })
+
+  const editMut = useMutation({
+    mutationFn: ({ id, ...d }) => usuariosService.update(id, d),
+    onSuccess: () => {
+      qc.invalidateQueries(['usr-admin'])
+      toast.success('Información actualizada')
+      setEditModal(null)
+    },
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
+  })
+
+  const toggleActivoMut = useMutation({
+    mutationFn: ({ id, activo }) => usuariosService.update(id, { activo }),
+    onSuccess: () => { qc.invalidateQueries(['usr-admin']); toast.success('Estado actualizado') },
+  })
+
+  const passMut = useMutation({
+    mutationFn: ({ id, nueva_password }) =>
+      api.post(`/usuarios/${id}/reset-password`, { nueva_password }),
+    onSuccess: res => {
+      qc.invalidateQueries(['usr-admin'])
+      const generada = res.data?.data?.nueva_password
+      if (generada) toast.success(`Contraseña restablecida: ${generada}`, { duration: 8000 })
+      else toast.success('Contraseña actualizada')
+      setPassModal(null)
+      resetP()
+    },
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
+  })
+
+  const openEdit = (u) => {
+    resetE({
+      nombre:           u.nombre          || '',
+      ci:               u.ci              || '',
+      primer_apellido:  u.primer_apellido || '',
+      segundo_apellido: u.segundo_apellido|| '',
+      telefono:         u.telefono        || '',
+      rol:              u.rol             || 'editor',
+    })
+    setEditModal(u)
+  }
+
   return (
     <div>
-      <SectionHeader title="Gestión de usuarios" subtitle="Solo el superadmin puede gestionar usuarios"><button onClick={()=>setCreateModal(true)} className="btn btn-primary btn-sm"><Plus size={15}/> Nuevo usuario</button></SectionHeader>
-      {isLoading?<LoadingCenter/>:(<div className="card overflow-hidden"><table className="table-pro w-full">
-        <thead><tr><th>Usuario</th><th className="hidden sm:table-cell">Correo</th><th>Rol</th><th>Estado</th><th className="text-right pr-4">Contraseña</th></tr></thead>
-        <tbody>
-          {list.map(u=>(<tr key={u.id}>
-            <td><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{u.nombre.charAt(0).toUpperCase()}</div><p className="font-medium text-sm">{u.nombre}</p></div></td>
-            <td className="hidden sm:table-cell text-gray-500 text-sm">{u.email}</td>
-            <td><select className="text-xs border rounded-lg px-2 py-1 bg-white" defaultValue={u.rol} onChange={e=>updateMut.mutate({id:u.id,rol:e.target.value})}>{['superadmin','admin','editor'].map(r=><option key={r} value={r}>{r}</option>)}</select></td>
-            <td><button onClick={()=>updateMut.mutate({id:u.id,activo:!u.activo})} className={`badge cursor-pointer text-xs ${u.activo?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>{u.activo?'Activo':'Inactivo'}</button></td>
-            <td className="text-right pr-4"><button onClick={()=>{setPassModal(u);resetP()}} className="btn btn-ghost btn-sm text-xs flex items-center gap-1"><RefreshCw size={13}/> Cambiar</button></td>
-          </tr>))}
-        </tbody>
-      </table></div>)}
-      <Modal open={createModal} onClose={()=>setCreateModal(false)} title="Nuevo usuario administrador">
-        <form onSubmit={hC(d=>createMut.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre completo *</label><input className="input" {...rC('nombre',{required:true})}/></div>
-          <div><label className="label">Correo electrónico *</label><input className="input" type="email" {...rC('email',{required:true})}/></div>
-          <div><label className="label">Rol *</label><select className="input" {...rC('rol',{required:true})}><option value="editor">Editor — crea borradores de noticias</option><option value="admin">Admin — gestiona todo el contenido</option><option value="superadmin">Superadmin — acceso total</option></select></div>
-          <div className="bg-blue-50 rounded-xl p-3 text-xs text-secondary">Se mostrará la contraseña temporal en pantalla al crear el usuario.</div>
-          <button type="submit" className="btn btn-primary w-full">Crear usuario</button>
+      <SectionHeader title="Gestión de usuarios" subtitle="Solo el superadmin puede gestionar cuentas">
+        <button onClick={() => { setCreateModal(true); setCreatedPass(null); resetC() }}
+          className="btn btn-primary btn-sm">
+          <Plus size={15} /> Nuevo usuario
+        </button>
+      </SectionHeader>
+
+      {isLoading ? <LoadingCenter /> : (
+        <div className="card overflow-hidden">
+          <table className="table-pro w-full">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th className="hidden md:table-cell">CI</th>
+                <th className="hidden sm:table-cell">Correo</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th className="text-right pr-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-gray-400">Sin usuarios</td></tr>
+              )}
+              {list.map(u => (
+                <tr key={u.id}>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {u.nombre?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{u.nombre}</p>
+                        {u.primer_apellido && (
+                          <p className="text-xs text-gray-400">{u.primer_apellido}</p>
+                        )}
+                        {u.debe_cambiar_password && (
+                          <span className="text-xs text-amber-600 font-medium">⚠ Debe cambiar contraseña</span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell text-gray-500 text-sm">{u.ci || '—'}</td>
+                  <td className="hidden sm:table-cell text-gray-500 text-sm">{u.email}</td>
+                  <td>
+                    <select
+                      className="text-xs border rounded-lg px-2 py-1 bg-white"
+                      defaultValue={u.rol}
+                      onChange={e => editMut.mutate({ id: u.id, rol: e.target.value })}>
+                      {['superadmin', 'admin', 'editor'].map(r =>
+                        <option key={r} value={r}>{r}</option>
+                      )}
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => toggleActivoMut.mutate({ id: u.id, activo: !u.activo })}
+                      className={`badge cursor-pointer text-xs ${u.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </button>
+                  </td>
+                  <td className="text-right pr-4">
+                    <div className="flex gap-1.5 justify-end">
+                      <button onClick={() => openEdit(u)}
+                        className="btn btn-ghost btn-sm p-1.5" title="Editar información">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => { setPassModal(u); resetP() }}
+                        className="btn btn-ghost btn-sm p-1.5" title="Cambiar contraseña">
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── MODAL CREAR ────────────────────────────── */}
+      <Modal open={createModal} onClose={() => { setCreateModal(false); setCreatedPass(null) }}
+        title="Nuevo usuario administrador" size="lg">
+
+        {/* Si ya se creó, mostrar la contraseña generada */}
+        {createdPass ? (
+          <div className="space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
+              <p className="text-green-700 font-semibold mb-2">✓ Usuario creado exitosamente</p>
+              <p className="text-sm text-gray-600 mb-3">Contraseña temporal generada:</p>
+              <div className="bg-white border-2 border-green-300 rounded-xl px-6 py-4 inline-block">
+                <p className="text-2xl font-mono font-bold text-secondary tracking-widest">{createdPass}</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Comparte esta contraseña con el usuario. El sistema le pedirá cambiarla en su primer ingreso.
+              </p>
+            </div>
+            <button onClick={() => { setCreateModal(false); setCreatedPass(null) }}
+              className="btn btn-primary w-full">Cerrar</button>
+          </div>
+        ) : (
+          <form onSubmit={hC(d => createMut.mutate(d))} className="grid sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="label">Nombre(s) *</label>
+              <input className="input" {...rC('nombre', { required: true })} />
+            </div>
+            <div>
+              <label className="label">Primer apellido *</label>
+              <input className="input" {...rC('primer_apellido', { required: true })} />
+            </div>
+            <div>
+              <label className="label">Segundo apellido</label>
+              <input className="input" {...rC('segundo_apellido')} />
+            </div>
+            <div>
+              <label className="label">CI (Cédula de Identidad) *</label>
+              <input className="input" placeholder="Ej: 12345678" {...rC('ci', { required: true })} />
+            </div>
+            <div>
+              <label className="label">Teléfono</label>
+              <input className="input" placeholder="Ej: 70000000" {...rC('telefono')} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Correo electrónico *</label>
+              <input className="input" type="email" {...rC('email', { required: true })} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Rol *</label>
+              <select className="input" {...rC('rol', { required: true })}>
+                <option value="editor">Editor — solo crea borradores de noticias</option>
+                <option value="admin">Admin — gestiona todo el contenido</option>
+                <option value="superadmin">Superadmin — acceso total al sistema</option>
+              </select>
+            </div>
+
+            {/* Previsualización de contraseña */}
+            {passPreview && (
+              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-3">
+                <p className="text-xs text-secondary font-semibold mb-1">Contraseña que se generará:</p>
+                <p className="font-mono text-lg font-bold text-secondary tracking-widest">{passPreview}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: CI + inicial del nombre + inicial del primer apellido
+                </p>
+              </div>
+            )}
+
+            <div className="sm:col-span-2">
+              <button type="submit" disabled={createMut.isPending} className="btn btn-primary w-full">
+                {createMut.isPending ? 'Creando...' : 'Crear usuario'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ── MODAL EDITAR INFORMACIÓN ─────────────── */}
+      <Modal open={!!editModal} onClose={() => setEditModal(null)}
+        title={`Editar información — ${editModal?.nombre}`} size="lg">
+        <form onSubmit={hE(d => editMut.mutate({ id: editModal.id, ...d }))}
+          className="grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="label">Nombre(s) *</label>
+            <input className="input" {...rE('nombre', { required: true })} />
+          </div>
+          <div>
+            <label className="label">Primer apellido *</label>
+            <input className="input" {...rE('primer_apellido', { required: true })} />
+          </div>
+          <div>
+            <label className="label">Segundo apellido</label>
+            <input className="input" {...rE('segundo_apellido')} />
+          </div>
+          <div>
+            <label className="label">CI</label>
+            <input className="input" {...rE('ci')} />
+          </div>
+          <div>
+            <label className="label">Teléfono</label>
+            <input className="input" {...rE('telefono')} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Rol</label>
+            <select className="input" {...rE('rol')}>
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+              <option value="superadmin">Superadmin</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={editMut.isPending} className="btn btn-primary w-full">
+              {editMut.isPending ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
         </form>
       </Modal>
-      {passModal&&(<Modal open={!!passModal} onClose={()=>setPassModal(null)} title={`Cambiar contraseña — ${passModal.nombre}`} size="sm">
-        <form onSubmit={hP(d=>passMut.mutate({id:passModal.id,...d}))} className="space-y-3">
-          <p className="text-sm text-gray-500">Se enviará un correo a <strong>{passModal.email}</strong></p>
-          <div><label className="label">Nueva contraseña *</label>
-            <div className="relative"><input className="input pr-10" type={showPass?'text':'password'} placeholder="Mínimo 6 caracteres" {...rP('nueva_password',{required:true,minLength:6})}/>
-              <button type="button" onClick={()=>setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">{showPass?<EyeOff size={15}/>:<Eye size={15}/>}</button>
+
+      {/* ── MODAL CONTRASEÑA ─────────────────────── */}
+      {passModal && (
+        <Modal open={!!passModal} onClose={() => setPassModal(null)}
+          title={`Contraseña — ${passModal.nombre}`} size="sm">
+          <form onSubmit={hP(d => passMut.mutate({ id: passModal.id, ...d }))}
+            className="space-y-4">
+            <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-600">
+              <p className="font-medium mb-1">Opciones:</p>
+              <p>• Escribe una contraseña específica abajo</p>
+              <p>• O deja vacío para <strong>regenerar la contraseña por defecto</strong> (CI + iniciales) y el usuario deberá cambiarla al entrar</p>
             </div>
-          </div>
-          <button type="submit" className="btn btn-primary w-full"><RefreshCw size={14}/> Actualizar contraseña</button>
-        </form>
-      </Modal>)}
+            <div>
+              <label className="label">Nueva contraseña (opcional)</label>
+              <div className="relative">
+                <input
+                  className="input pr-10"
+                  type={showNewPass ? 'text' : 'password'}
+                  placeholder="Dejar vacío para usar CI+iniciales"
+                  {...rP('nueva_password')}
+                />
+                <button type="button" onClick={() => setShowNewPass(!showNewPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  {showNewPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" disabled={passMut.isPending}
+              className="btn btn-primary w-full">
+              <RefreshCw size={14} />
+              {passMut.isPending ? 'Procesando...' : 'Restablecer contraseña'}
+            </button>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }
-

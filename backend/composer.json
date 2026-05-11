@@ -3,7 +3,7 @@
   "description": "Backend PHP para la página web CCS UMSA",
   "require": {
     "php": ">=8.2",
-    "phpmailer/phpmailer": "^6.8",
+    "phpmailer/phpmailer": "*",
     "cloudinary/cloudinary_php": "^2.0",
     "firebase/php-jwt": "^6.0"
   },
