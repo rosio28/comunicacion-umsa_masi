@@ -28,11 +28,16 @@ export function AuthProvider({ children }) {
   // En AuthContext.jsx — el login debe devolver los datos de la respuesta
 // REEMPLAZAR ESTO (está mal — mezcla código de ejemplo):
 const login = async (email, password) => {
-  const res = await authService.login(email, password)
+  const res = await api.post('/auth/login', { email, password })
+
   const { token, usuario, debe_cambiar_password } = res.data.data
-  localStorage.setItem('token', token)
+
+  // ✅ GUARDAR TOKEN (ESTO ES LO QUE FALTA)
+  localStorage.setItem('ccs_token', token)
+
   setToken(token)
   setUsuario(usuario)
+
   return { debe_cambiar_password }
 }
 

@@ -1,0 +1,185 @@
+MANUAL DE INSTALACIÓN — SISTEMA COMUNICACIÓN UMSA (LOCAL - WINDOWS)
+
+==================
+REQUISITOS PREVIOS
+==================
+
+Instalar previamente:
+
+* PostgreSQL 15 o superior
+* PHP 8.2 o superior
+* Composer
+* Node.js y npm
+
+Verificar instalación:
+
+psql --version
+php -v
+composer -V
+node -v
+npm -v
+
+===============================
+PASO 1 — UBICACIÓN DEL PROYECTO
+===============================
+
+Abrir terminal (PowerShell o CMD):
+
+cd C:\Users\Chirinos\Desktop\Pasantia\proyecto (ESTE ES EL MIO - MASIEL)
+
+===================================
+PASO 2 — BASE DE DATOS (POSTGRESQL)
+===================================
+
+1. Ingresar a PostgreSQL:
+
+psql -U postgres
+
+2. Crear base de datos:
+
+CREATE DATABASE comunicacion_umsa;
+
+3. Crear usuario (si no existe):
+
+CREATE USER ccs_user WITH PASSWORD '123456';
+
+4. Dar permisos:
+
+GRANT ALL PRIVILEGES ON DATABASE comunicacion_umsa TO ccs_user;
+GRANT ALL ON SCHEMA public TO ccs_user;
+ALTER SCHEMA public OWNER TO ccs_user;
+ALTER DATABASE comunicacion_umsa OWNER TO ccs_user;
+
+5. Salir:
+
+\q
+
+6. Ejecutar schema:
+
+psql -U ccs_user -d comunicacion_umsa -f database\schema.sql
+
+=========================================================
+PASO 3 — BACKEND (PHP)
+======================
+
+1. Ir al backend:
+
+cd backend
+
+2. Instalar dependencias:
+
+composer install
+
+3. Configurar archivo: IMPORTANTE
+
+backend/api/config/config.php
+
+Editar:
+
+define('DB_HOST',  '127.0.0.1');
+define('DB_NAME',  'comunicacion_umsa');
+define('DB_USER',  'ccs_user');
+define('DB_PASS',  '123456');
+
+define('JWT_SECRET', '12345678901234567890123456789012');
+define('FRONTEND_URL', 'http://localhost:5173');
+
+4. Levantar servidor backend:
+
+cd api
+php -S localhost:8000
+
+API disponible en:
+http://localhost:8000/api
+
+================================
+PASO 4 — FRONTEND (REACT + VITE)
+================================
+
+1. Instalar dependencias:
+
+cd frontend
+npm install
+
+2. Crear archivo .env:
+
+copy .env.example .env
+
+3. Editar .env:
+
+VITE_API_URL=http://localhost:8000/api
+
+4. SOLUCIÓN ERROR POSTCSS (IMPORTANTE):
+
+Archivo:
+postcss.config.cjs
+
+Contenido:
+
+module.exports = {
+plugins: {
+tailwindcss: {},
+autoprefixer: {},
+},
+};
+
+5. Ejecutar frontend:
+
+npm run dev
+
+Frontend:
+http://localhost:5173
+
+==========================
+PASO 5 — ACCESO AL SISTEMA
+==========================
+
+URL:
+http://localhost:5173/admin/login
+
+Credenciales:
+
+Email: superadmin@ccs.umsa.bo
+Password: Admin2026!
+
+IMPORTANTE:
+Cambiar contraseña en primer login
+
+=============================
+PASO 6 — COMANDOS IMPORTANTES
+=============================
+
+Backend:
+php -S localhost:8000 -t api/
+
+Frontend:
+npm run dev
+
+Base de datos:
+psql -U ccs_user -d comunicacion_umsa
+
+================
+ERRORES COMUNES
+===============
+
+1. ERROR "permission denied for schema public"
+   Solución:
+   GRANT ALL ON SCHEMA public TO ccs_user;
+
+2. ERROR "password authentication failed"
+   Solución:
+   ALTER USER ccs_user WITH PASSWORD '123456';
+
+3. ERROR POSTCSS "Unexpected token export"
+   Solución:
+   usar module.exports en postcss.config.cjs
+
+4. ERROR 500 login
+   Revisar conexión PostgreSQL y config.php
+
+5. FRONTEND EN BLANCO
+   Revisar VITE_API_URL en .env
+
+===============
+FIN DEL MANUAL
+==============
