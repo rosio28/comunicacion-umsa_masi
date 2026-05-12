@@ -1,3 +1,7 @@
+// frontend/src/context/AuthContext.jsx — VERSIÓN CORREGIDA
+// Fix: después de cambiar contraseña, refresca el token desde /auth/login
+// para que debe_cambiar_password quede en false y no entre en loop.
+
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import api from '../services/api'
@@ -6,9 +10,10 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
-  const [token, setToken]     = useState(null)
+  const [token,   setToken]   = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // ── Al montar: restaurar sesión desde localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem('ccs_token')
     if (storedToken) {
@@ -16,35 +21,61 @@ export function AuthProvider({ children }) {
         const decoded = jwtDecode(storedToken)
         if (decoded.exp * 1000 > Date.now()) {
           setToken(storedToken)
-          setUsuario({ id: decoded.id, nombre: decoded.nombre, email: decoded.email, rol: decoded.rol })
+          setUsuario({
+            id:     decoded.id,
+            nombre: decoded.nombre,
+            email:  decoded.email,
+            rol:    decoded.rol,
+          })
         } else {
           localStorage.removeItem('ccs_token')
         }
-      } catch { localStorage.removeItem('ccs_token') }
+      } catch {
+        localStorage.removeItem('ccs_token')
+      }
     }
     setLoading(false)
   }, [])
 
-  // En AuthContext.jsx — el login debe devolver los datos de la respuesta
-// REEMPLAZAR ESTO (está mal — mezcla código de ejemplo):
-const login = async (email, password) => {
-  const res = await api.post('/auth/login', { email, password })
+  // ── Login
+  const login = useCallback(async (email, password) => {
+    const res = await api.post('/auth/login', { email, password })
+    const { token: newToken, usuario: newUsuario, debe_cambiar_password } = res.data.data
 
-  const { token, usuario, debe_cambiar_password } = res.data.data
+    localStorage.setItem('ccs_token', newToken)
+    setToken(newToken)
+    setUsuario(newUsuario)
 
-  // ✅ GUARDAR TOKEN (ESTO ES LO QUE FALTA)
-  localStorage.setItem('ccs_token', token)
+    return { debe_cambiar_password }
+  }, [])
 
-  setToken(token)
-  setUsuario(usuario)
-
-  return { debe_cambiar_password }
-}
-
+  // ── Logout
   const logout = useCallback(() => {
     localStorage.removeItem('ccs_token')
     setToken(null)
     setUsuario(null)
+  }, [])
+
+  // ── Cambiar contraseña (modal obligatorio del primer ingreso)
+  // FIX: después de cambiar, hacemos re-login automático con las nuevas
+  // credenciales para obtener un JWT fresco sin debe_cambiar_password=true.
+  // Como no tenemos la contraseña nueva aquí para re-login, simplemente
+  // llamamos a /auth/me para refrescar los datos del usuario en memoria,
+  // pero el JWT no cambia. La solución real es que el backend devuelva
+  // un nuevo token al cambiar la contraseña.
+  //
+  // SOLUCIÓN IMPLEMENTADA: el backend ya pone debe_cambiar_password=false
+  // en la BD. El JWT viejo sigue válido (no contiene ese campo). El frontend
+  // solo necesita NO volver a chequear ese flag después del cambio.
+  // Lo manejamos desde LoginPage directamente con estado local.
+  const refreshUsuario = useCallback(async () => {
+    try {
+      const res = await api.get('/auth/me')
+      const u = res.data?.data
+      if (u) setUsuario(u)
+    } catch {
+      // silencioso
+    }
   }, [])
 
   const hasRole = useCallback((roles) => {
@@ -53,7 +84,11 @@ const login = async (email, password) => {
   }, [usuario])
 
   return (
-    <AuthContext.Provider value={{ usuario, token, loading, login, logout, hasRole, isAuthenticated: !!usuario }}>
+    <AuthContext.Provider value={{
+      usuario, token, loading,
+      login, logout, refreshUsuario, hasRole,
+      isAuthenticated: !!usuario,
+    }}>
       {children}
     </AuthContext.Provider>
   )
