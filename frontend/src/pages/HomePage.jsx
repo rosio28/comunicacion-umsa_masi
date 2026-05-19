@@ -8,13 +8,14 @@ import {
 } from 'lucide-react'
 import { noticiasService, institucionalService, eventosService, multimediaService } from '../services/services'
 import { formatDate, truncate } from '../utils/helpers'
+import '../utils/patchDriveImages'
 
 // ─────────────────────────────────────────────────────────
 // HERO IMAGES — change these to real photos of the career
 // ─────────────────────────────────────────────────────────
 const HERO_SLIDES = [
   {
-    img:     'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1600&q=80',
+    img: 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=sharing',
     eyebrow: 'Carrera de Comunicación Social — UMSA',
     title:   'Formamos la voz de Bolivia',
     sub:     'Más de 40 años formando comunicadores comprometidos con la realidad social, cultural y política de nuestro país.',
@@ -269,7 +270,7 @@ function StatItem({ value, label, color }) {
 
 // ─── MAIN HOME ────────────────────────────────────────────
 export default function HomePage() {
-  const { data: nData }    = useQuery({ queryKey: ['noticias-home'],   queryFn: () => noticiasService.getAll({ limit: 7 }) })
+  const { data: nData }    = useQuery({ queryKey: ['noticias-home'],   queryFn: () => noticiasService.getAll({ limit: 4 }) })
   const { data: eData }    = useQuery({ queryKey: ['eventos-home'],    queryFn: () => eventosService.getAll({ limit: 4 }) })
   const { data: mision }   = useQuery({ queryKey: ['inst-mision'],     queryFn: () => institucionalService.get('mision') })
   const { data: vision }   = useQuery({ queryKey: ['inst-vision'],     queryFn: () => institucionalService.get('vision') })
@@ -408,33 +409,49 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {eventos.map((e, i) => (
-                <div key={e.id} className={`card p-4 hover:shadow-card-md transition-all duration-300 anim-fade-up delay-${(i+1) * 100}`}>
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center text-white text-xs font-bold"
-                         style={{ background: e.color || '#C0392B' }}>
-                      <span className="text-base leading-none font-bold">
-                        {new Date(e.fecha_inicio).getDate()}
-                      </span>
-                      <span className="text-xs opacity-80 leading-none">
-                        {new Date(e.fecha_inicio).toLocaleDateString('es', { month: 'short' })}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-semibold uppercase tracking-wide"
-                            style={{ color: e.color || '#C0392B' }}>{e.tipo}</span>
-                      <p className="font-semibold text-sm text-gray-800 mt-0.5 line-clamp-2 leading-snug">{e.titulo}</p>
-                    </div>
-                  </div>
-                  {e.lugar && (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <MapPin size={11} />
-                      <span className="truncate">{e.lugar}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+  {eventos.slice(0, 4).map((e, i) => (
+    <div
+      key={e.id}
+      className={`card p-4 hover:shadow-card-md transition-all duration-300 anim-fade-up delay-${(i + 1) * 100}`}
+    >
+      <div className="flex items-start gap-3 mb-3">
+        <div
+          className="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center text-white text-xs font-bold"
+          style={{ background: e.color || '#C0392B' }}
+        >
+          <span className="text-base leading-none font-bold">
+            {new Date(e.fecha_inicio).getDate()}
+          </span>
+          <span className="text-xs opacity-80 leading-none">
+            {new Date(e.fecha_inicio).toLocaleDateString('es', {
+              month: 'short',
+            })}
+          </span>
+        </div>
+
+        <div className="min-w-0">
+          <span
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: e.color || '#C0392B' }}
+          >
+            {e.tipo}
+          </span>
+
+          <p className="font-semibold text-sm text-gray-800 mt-0.5 line-clamp-2 leading-snug">
+            {e.titulo}
+          </p>
+        </div>
+      </div>
+
+      {e.lugar && (
+        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <MapPin size={11} />
+          <span className="truncate">{e.lugar}</span>
+        </div>
+      )}
+    </div>
+  ))}
+</div>
           </div>
         </section>
       )}
@@ -454,30 +471,64 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {media.map(m => {
-                const thumb = m.thumbnail_url || (m.url_contenido?.includes('youtube') ?
-                  `https://img.youtube.com/vi/${m.url_contenido.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1]}/hqdefault.jpg` : null)
-                return (
-                  <a key={m.id} href={m.url_contenido} target="_blank" rel="noreferrer"
-                     className="group relative rounded-2xl overflow-hidden bg-gray-800 h-44 block">
-                    {thumb
-                      ? <img src={thumb} alt={m.titulo} className="w-full h-full object-cover opacity-80 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
-                      : <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900" />
-                    }
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <Play size={20} className="text-white ml-0.5" fill="white" />
-                      </div>
+            {media.slice(0, 4).map(m => {
+
+              const videoId = m.url_contenido?.match(
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/
+              )?.[1]
+
+              const thumb =
+                m.thumbnail_url ||
+                (videoId
+                  ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                  : null)
+
+              return (
+                <a
+                  key={m.id}
+                  href={m.url_contenido}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative rounded-2xl overflow-hidden bg-gray-800 h-44 block"
+                >
+                  {thumb ? (
+                    <img
+                      src={thumb}
+                      alt={m.titulo}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src =
+                          videoId
+                            ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                            : '/placeholder.jpg'
+                      }}
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900" />
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <Play size={20} className="text-white ml-0.5" fill="white" />
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="text-white text-xs font-semibold line-clamp-2">{m.titulo}</p>
-                      <p className="text-white/50 text-xs mt-0.5">{m.autor_nombre}</p>
-                    </div>
-                  </a>
-                )
-              })}
-            </div>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-white text-xs font-semibold line-clamp-2">
+                      {m.titulo}
+                    </p>
+
+                    <p className="text-white/50 text-xs mt-0.5">
+                      {m.autor_nombre}
+                    </p>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
           </div>
         </section>
       )}
