@@ -1,7 +1,6 @@
 <?php
 // ============================================================
-// ROUTER PRINCIPAL — backend/api/index.php
-// VERSIÓN DEFINITIVA — sin clases duplicadas
+// ROUTER PRINCIPAL — index.php — VERSIÓN FINAL CORREGIDA
 // ============================================================
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -12,6 +11,7 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/utils/Response.php';
 require_once __DIR__ . '/utils/JWT.php';
 require_once __DIR__ . '/utils/Upload.php';
+require_once __DIR__ . '/utils/ParseInput.php';
 require_once __DIR__ . '/middleware/Auth.php';
 
 // ── CORS
@@ -23,15 +23,11 @@ header('Access-Control-Allow-Credentials: true');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
 // ── CONTROLLERS
-// IMPORTANTE: Solo cargamos AllControllers.php (que ya tiene todo).
-// NuevosControllers.php NO se carga aquí para evitar clases duplicadas.
-// Si ya copiaste el contenido de NuevosControllers al final de AllControllers,
-// entonces elimina o ignora el archivo NuevosControllers.php.
 require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/NoticiasController.php';
 require_once __DIR__ . '/controllers/DocentesController.php';
 require_once __DIR__ . '/controllers/AllControllers.php';
-// NO agregar NuevosControllers.php — las clases ya están en AllControllers.php
+// GaleriaController ya está en AllControllers — NO recargar
 
 // ── ROUTING
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -58,19 +54,19 @@ try {
         $r0==='auth' && $r1==='reset-password'   && $method==='POST' => (new AuthController)->resetPassword(),
 
         // ── NOTICIAS
-        $r0==='noticias' && !$r1                    && $method==='GET'    => (new NoticiasController)->index(),
-        $r0==='noticias' && !$r1                    && $method==='POST'   => (new NoticiasController)->store(),
-        $r0==='noticias' && $r1 && $r2==='publicar' && $method==='PATCH'  => (new NoticiasController)->togglePublicar((int)$r1),
-        $r0==='noticias' && $r1 && $r2!=='publicar' && $method==='GET'    => (new NoticiasController)->show($r1),
-        $r0==='noticias' && $r1 && $r2!=='publicar' && $method==='PUT'    => (new NoticiasController)->update((int)$r1),
-        $r0==='noticias' && $r1                     && $method==='DELETE' => (new NoticiasController)->destroy((int)$r1),
+        $r0==='noticias' && !$r1                     && $method==='GET'   => (new NoticiasController)->index(),
+        $r0==='noticias' && !$r1                     && $method==='POST'  => (new NoticiasController)->store(),
+        $r0==='noticias' && $r1 && $r2==='publicar'  && $method==='PATCH' => (new NoticiasController)->togglePublicar((int)$r1),
+        $r0==='noticias' && $r1 && $r2!=='publicar'  && $method==='GET'   => (new NoticiasController)->show($r1),
+        $r0==='noticias' && $r1 && $r2!=='publicar'  && $method==='PUT'   => (new NoticiasController)->update((int)$r1),
+        $r0==='noticias' && $r1                      && $method==='DELETE'=> (new NoticiasController)->destroy((int)$r1),
 
         // ── CATEGORÍAS
         $r0==='categorias' && !$r1 && $method==='GET'    => (new CategoriasController)->index(),
         $r0==='categorias' && !$r1 && $method==='POST'   => (new CategoriasController)->store(),
         $r0==='categorias' && $r1  && $method==='DELETE' => (new CategoriasController)->destroy((int)$r1),
 
-        // ── EVENTOS + SESIONES (sesiones van ANTES que rutas genéricas)
+        // ── EVENTOS + SESIONES
         $r0==='eventos' && $r1 && $r2==='sesiones' && !$r3 && $method==='GET'    => (new EventoSesionesController)->index((int)$r1),
         $r0==='eventos' && $r1 && $r2==='sesiones' && !$r3 && $method==='POST'   => (new EventoSesionesController)->store((int)$r1),
         $r0==='eventos' && $r1 && $r2==='sesiones' && $r3  && $method==='PUT'    => (new EventoSesionesController)->update((int)$r3),
@@ -80,13 +76,13 @@ try {
         $r0==='eventos' && $r1 && !$r2        && $method==='PUT'    => (new EventosController)->update((int)$r1),
         $r0==='eventos' && $r1 && !$r2        && $method==='DELETE' => (new EventosController)->destroy((int)$r1),
 
-        // ── CONVOCATORIAS (el modelo existente: becas, pasantías anunciadas)
+        // ── CONVOCATORIAS
         $r0==='convocatorias' && !$r1 && $method==='GET'    => (new ConvocatoriasController)->index(),
         $r0==='convocatorias' && !$r1 && $method==='POST'   => (new ConvocatoriasController)->store(),
         $r0==='convocatorias' && $r1  && $method==='PUT'    => (new ConvocatoriasController)->update((int)$r1),
         $r0==='convocatorias' && $r1  && $method==='DELETE' => (new ConvocatoriasController)->destroy((int)$r1),
 
-        // ── CONVENIOS INSTITUCIONALES (tabla nueva)
+        // ── CONVENIOS
         $r0==='convenios' && !$r1 && $method==='GET'    => (new ConveniosController)->index(),
         $r0==='convenios' && !$r1 && $method==='POST'   => (new ConveniosController)->store(),
         $r0==='convenios' && $r1  && $method==='PUT'    => (new ConveniosController)->update((int)$r1),
@@ -124,20 +120,20 @@ try {
         $r0==='whatsapp' && $r1!=='admin' && $method==='DELETE' => (new WhatsappController)->destroy((int)$r1),
 
         // ── GALERÍA
-        $r0==='galeria' && $r1==='albumes' && !$r2              && $method==='GET'    => (new GaleriaController)->albumes(),
-        $r0==='galeria' && $r1==='albumes' && !$r2              && $method==='POST'   => (new GaleriaController)->crearAlbum(),
-        $r0==='galeria' && $r1==='albumes' && $r2 && $r3==='imagenes' && $method==='GET' => (new GaleriaController)->imagenes((int)$r2),
-        $r0==='galeria' && $r1==='albumes' && $r2 && !$r3       && $method==='PUT'    => (new GaleriaController)->actualizarAlbum((int)$r2),
-        $r0==='galeria' && $r1==='albumes' && $r2 && !$r3       && $method==='DELETE' => (new GaleriaController)->eliminarAlbum((int)$r2),
-        $r0==='galeria' && $r1==='imagenes' && !$r2             && $method==='POST'   => (new GaleriaController)->subirImagen(),
-        $r0==='galeria' && $r1==='imagenes' && $r2              && $method==='DELETE' => (new GaleriaController)->eliminarImagen((int)$r2),
+        $r0==='galeria' && $r1==='albumes' && !$r2                   && $method==='GET'    => (new GaleriaController)->albumes(),
+        $r0==='galeria' && $r1==='albumes' && !$r2                   && $method==='POST'   => (new GaleriaController)->crearAlbum(),
+        $r0==='galeria' && $r1==='albumes' && $r2 && $r3==='imagenes' && $method==='GET'  => (new GaleriaController)->imagenes((int)$r2),
+        $r0==='galeria' && $r1==='albumes' && $r2 && !$r3            && $method==='PUT'    => (new GaleriaController)->actualizarAlbum((int)$r2),
+        $r0==='galeria' && $r1==='albumes' && $r2 && !$r3            && $method==='DELETE' => (new GaleriaController)->eliminarAlbum((int)$r2),
+        $r0==='galeria' && $r1==='imagenes' && !$r2                  && $method==='POST'   => (new GaleriaController)->subirImagen(),
+        $r0==='galeria' && $r1==='imagenes' && $r2                   && $method==='DELETE' => (new GaleriaController)->eliminarImagen((int)$r2),
 
         // ── MULTIMEDIA
-        $r0==='multimedia' && !$r1                   && $method==='GET'    => (new MultimediaController)->index(),
-        $r0==='multimedia' && !$r1                   && $method==='POST'   => (new MultimediaController)->store(),
-        $r0==='multimedia' && $r1 && $r2==='publicar' && $method==='PATCH' => (new MultimediaController)->togglePublicar((int)$r1),
-        $r0==='multimedia' && $r1 && $r2!=='publicar' && $method==='PUT'   => (new MultimediaController)->update((int)$r1),
-        $r0==='multimedia' && $r1                    && $method==='DELETE' => (new MultimediaController)->destroy((int)$r1),
+        $r0==='multimedia' && !$r1                    && $method==='GET'    => (new MultimediaController)->index(),
+        $r0==='multimedia' && !$r1                    && $method==='POST'   => (new MultimediaController)->store(),
+        $r0==='multimedia' && $r1 && $r2==='publicar' && $method==='PATCH'  => (new MultimediaController)->togglePublicar((int)$r1),
+        $r0==='multimedia' && $r1 && $r2!=='publicar' && $method==='PUT'    => (new MultimediaController)->update((int)$r1),
+        $r0==='multimedia' && $r1                     && $method==='DELETE' => (new MultimediaController)->destroy((int)$r1),
 
         // ── STREAMING
         $r0==='streaming' && !$r1 && $method==='GET'    => (new StreamingController)->index(),
@@ -154,15 +150,21 @@ try {
         $r0==='tramites' && $r1  && $method==='PUT'    => (new TramitesController)->update((int)$r1),
         $r0==='tramites' && $r1  && $method==='DELETE' => (new TramitesController)->destroy((int)$r1),
 
+        // ── TRANSPARENCIA
+        $r0==='transparencia' && !$r1 && $method==='GET'    => (new TransparenciaController)->index(),
+        $r0==='transparencia' && !$r1 && $method==='POST'   => (new TransparenciaController)->store(),
+        $r0==='transparencia' && $r1  && $method==='PUT'    => (new TransparenciaController)->update((int)$r1),
+        $r0==='transparencia' && $r1  && $method==='DELETE' => (new TransparenciaController)->destroy((int)$r1),
+
         // ── CONTACTO
         $r0==='contacto' && $method==='POST' => (new ContactoController)->enviar(),
 
         // ── USUARIOS
-        $r0==='usuarios' && !$r1                                && $method==='GET'    => (new UsuariosController)->index(),
-        $r0==='usuarios' && !$r1                                && $method==='POST'   => (new UsuariosController)->store(),
-        $r0==='usuarios' && $r1 && $r2==='reset-password'       && $method==='POST'   => (new UsuariosController)->resetPasswordAdmin((int)$r1),
-        $r0==='usuarios' && $r1 && $r2!=='reset-password'       && $method==='PUT'    => (new UsuariosController)->update((int)$r1),
-        $r0==='usuarios' && $r1                                 && $method==='DELETE' => (new UsuariosController)->destroy((int)$r1),
+        $r0==='usuarios' && !$r1                           && $method==='GET'    => (new UsuariosController)->index(),
+        $r0==='usuarios' && !$r1                           && $method==='POST'   => (new UsuariosController)->store(),
+        $r0==='usuarios' && $r1 && $r2==='reset-password'  && $method==='POST'   => (new UsuariosController)->resetPasswordAdmin((int)$r1),
+        $r0==='usuarios' && $r1 && $r2!=='reset-password'  && $method==='PUT'    => (new UsuariosController)->update((int)$r1),
+        $r0==='usuarios' && $r1                            && $method==='DELETE' => (new UsuariosController)->destroy((int)$r1),
 
         default => Response::error("Ruta no encontrada: $method /$path", 404)
     };
