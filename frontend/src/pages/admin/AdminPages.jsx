@@ -1,10 +1,8 @@
-// AdminPages.jsx — TODOS LOS CRUDS CORREGIDOS
-// Fixes aplicados:
-// 1. parseBool maneja 't'/'f' de PostgreSQL
-// 2. buildFormData construye FormData con booleanos reales
-// 3. update: formularios pre-cargan datos actuales, imagen muestra preview
-// 4. Noticia destacado: toggle correcto
-// 5. Convocatorias/Trámites: archivo nuevo reemplaza anterior
+// AdminPages.jsx — FIXES:
+// 1. AdminNoticiasPage usa noticiasAdminService (con JWT) → ve borradores
+// 2. Toggle destacado es EXCLUSIVO: al marcar uno se desmarcan todos los demás
+// 3. parseBool maneja 't'/'f' de PostgreSQL correctamente
+// 4. NoticiaFormPage pre-carga datos correctamente para edición
 
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -15,20 +13,25 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import {
-  noticiasService, docentesService, alumnosService, egresadosService,
-  multimediaService, galeriaService, whatsappService, materiasService,
-  institucionalService, tramitesService, convocatoriasService, usuariosService,
-  eventosService, categoriasService,
+  noticiasService, noticiasAdminService, docentesService, alumnosService,
+  egresadosService, multimediaService, galeriaService, whatsappService,
+  materiasService, institucionalService, tramitesService, convocatoriasService,
+  usuariosService, eventosService, categoriasService,
 } from '../../services/services'
-import { LoadingCenter, EmptyState, Modal, ConfirmDialog, SectionHeader, Badge } from '../../components/ui/UI'
+import {
+  LoadingCenter, EmptyState, Modal, ConfirmDialog, SectionHeader, Badge,
+} from '../../components/ui/UI'
 import { formatDate, formatDateTime } from '../../utils/helpers'
 import api from '../../services/api'
-import { Upload, Link2, X, Eye, EyeOff, Plus, Pencil, Trash2, RefreshCw, Star, CheckCircle } from 'lucide-react'
+import {
+  Upload, Link2, X, Eye, EyeOff, Plus, Pencil, Trash2,
+  RefreshCw, Star, CheckCircle,
+} from 'lucide-react'
 
-// ─── Parsear boolean de PostgreSQL ('t','f',true,false,'true','false') ──
+// ─── Parsear boolean de PostgreSQL ('t','f',true,false,'true','false') ──────
 function parseBool(v) {
-  if (v === true  || v === 1  || v === '1')    return true
-  if (v === false || v === 0  || v === '0')    return false
+  if (v === true  || v === 1  || v === '1')  return true
+  if (v === false || v === 0  || v === '0')  return false
   if (typeof v === 'string') {
     const s = v.toLowerCase().trim()
     return s === 'true' || s === 't' || s === 'yes' || s === 'on'
@@ -36,55 +39,52 @@ function parseBool(v) {
   return false
 }
 
-// ─── Construir FormData desde objeto (gestiona booleanos bien) ──────────
-function buildFormData(data, imgFile, imgUrl, imgField = 'imagen') {
-  const fd = new FormData()
-  Object.entries(data).forEach(([k, v]) => {
-    if (v === null || v === undefined) return
-    if (typeof v === 'boolean') { fd.append(k, v ? 'true' : 'false'); return }
-    if (String(v) !== '') fd.append(k, String(v))
-  })
-  if (imgFile instanceof File) {
-    fd.append(imgField, imgFile)
-  } else if (imgUrl && imgUrl.trim() !== '') {
-    fd.append(`${imgField}_url`, imgUrl.trim())
-  }
-  return fd
-}
-
 const MULTIPART = { headers: { 'Content-Type': 'multipart/form-data' } }
 
-// ─── Componentes compartidos ────────────────────────────────────────────
+// ─── Componentes compartidos ────────────────────────────────────────────────
+
 function EstadoBadge({ publicado, onClick }) {
   const pub = parseBool(publicado)
   return (
     <button onClick={onClick}
       className={`badge cursor-pointer text-xs font-semibold select-none transition-colors
-        ${pub ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
+        ${pub
+          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+          : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>
       {pub ? '● Publicado' : '○ Borrador'}
     </button>
   )
 }
 
+// DestacadoBadge — solo UNA noticia puede estar destacada a la vez
 function DestacadoBadge({ destacado, onClick }) {
   const dest = parseBool(destacado)
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
+      title={dest ? 'Destacada — clic para quitar' : 'Sin destacar — clic para destacar (se desmarcará la actual)'}
       className={`badge cursor-pointer text-xs font-semibold select-none ml-1 transition-colors
-        ${dest ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
-      {dest ? '★' : '☆'}
+        ${dest
+          ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+      {dest ? '★ Destacada' : '☆'}
     </button>
   )
 }
 
 function FiltroEstado({ value, onChange, showDestacado = false }) {
-  const opts = [['todos','Todos'],['publicado','Publicados'],['borrador','Borradores'], ...(showDestacado?[['destacado','Destacados']]:[])]
+  const opts = [
+    ['todos',    'Todos'],
+    ['publicado','Publicados'],
+    ['borrador', 'Borradores'],
+    ...(showDestacado ? [['destacado', 'Destacados']] : []),
+  ]
   return (
     <div className="flex gap-1.5 flex-wrap items-center">
-      {opts.map(([v,l]) => (
+      {opts.map(([v, l]) => (
         <button key={v} onClick={() => onChange(v)}
           className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors
-            ${value===v ? 'bg-secondary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            ${value === v ? 'bg-secondary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
           {l}
         </button>
       ))}
@@ -99,11 +99,11 @@ function filtrar(list, filtro) {
   return list
 }
 
-// ─── ImageField: URL o archivo, con preview ────────────────────────────
+// ─── ImageField: URL o archivo, con preview ─────────────────────────────────
 function ImageField({ label = 'Imagen', currentUrl = '', onFile, onUrl }) {
-  const [mode, setMode]     = useState('url')
+  const [mode,    setMode]    = useState('url')
   const [preview, setPreview] = useState('')
-  const [urlVal, setUrlVal]   = useState('')
+  const [urlVal,  setUrlVal]  = useState('')
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -111,23 +111,32 @@ function ImageField({ label = 'Imagen', currentUrl = '', onFile, onUrl }) {
     setUrlVal(currentUrl || '')
   }, [currentUrl])
 
-  const clear = () => { setPreview(''); setUrlVal(''); onFile?.(null); onUrl?.('') }
+  const clear = () => {
+    setPreview(''); setUrlVal(''); onFile?.(null); onUrl?.('')
+  }
 
   return (
     <div>
       <label className="label">{label}</label>
       <div className="flex gap-2 mb-2">
-        {['url','file'].map(m => (
+        {['url', 'file'].map(m => (
           <button key={m} type="button" onClick={() => setMode(m)}
             className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors
-              ${mode===m ? 'bg-secondary text-white border-secondary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            {m==='url' ? <><Link2 size={12}/> URL</> : <><Upload size={12}/> Subir</>}
+              ${mode === m
+                ? 'bg-secondary text-white border-secondary'
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+            {m === 'url' ? <><Link2 size={12}/> URL</> : <><Upload size={12}/> Subir</>}
           </button>
         ))}
       </div>
-      {mode==='url' ? (
-        <input className="input" type="url" placeholder="https://..." value={urlVal}
-          onChange={e => { setUrlVal(e.target.value); setPreview(e.target.value); onUrl?.(e.target.value) }}/>
+      {mode === 'url' ? (
+        <input className="input" type="url" placeholder="https://... o link de Google Drive"
+          value={urlVal}
+          onChange={e => {
+            setUrlVal(e.target.value)
+            setPreview(e.target.value)
+            onUrl?.(e.target.value)
+          }}/>
       ) : (
         <>
           <input type="file" ref={fileRef} accept="image/*" className="hidden"
@@ -145,7 +154,7 @@ function ImageField({ label = 'Imagen', currentUrl = '', onFile, onUrl }) {
       {preview && (
         <div className="mt-2 relative inline-block">
           <img src={preview} alt="" className="h-20 w-auto rounded-lg border object-cover"
-            onError={e => e.target.style.display='none'}/>
+            onError={e => e.target.style.display = 'none'}/>
           <button type="button" onClick={clear}
             className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white">
             <X size={10}/>
@@ -156,10 +165,10 @@ function ImageField({ label = 'Imagen', currentUrl = '', onFile, onUrl }) {
   )
 }
 
-// ─── FileField: PDF/DOC con replace ────────────────────────────────────
+// ─── FileField: PDF/DOC ─────────────────────────────────────────────────────
 function FileField({ label = 'Documento', currentUrl = '', onFile, onUrl, accept = '.pdf,.doc,.docx' }) {
   const [pdfFile, setPdfFile] = useState(null)
-  const [urlVal, setUrlVal]   = useState(currentUrl || '')
+  const [urlVal,  setUrlVal]  = useState(currentUrl || '')
   const ref = useRef(null)
 
   useEffect(() => { setUrlVal(currentUrl || '') }, [currentUrl])
@@ -173,7 +182,8 @@ function FileField({ label = 'Documento', currentUrl = '', onFile, onUrl, accept
           <Upload size={13}/> {pdfFile?.name || 'Subir archivo'}
         </button>
         {currentUrl && !pdfFile && (
-          <a href={currentUrl} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm text-secondary text-xs">
+          <a href={currentUrl} target="_blank" rel="noreferrer"
+            className="btn btn-ghost btn-sm text-secondary text-xs">
             Ver archivo actual
           </a>
         )}
@@ -183,65 +193,116 @@ function FileField({ label = 'Documento', currentUrl = '', onFile, onUrl, accept
         )}
       </div>
       <input type="file" ref={ref} accept={accept} className="hidden"
-        onChange={e => { const f = e.target.files?.[0]; if(f){ setPdfFile(f); onFile?.(f) }}}/>
-      <input className="input text-xs" type="url" placeholder="O pega URL del documento..."
-        value={urlVal} onChange={e => { setUrlVal(e.target.value); onUrl?.(e.target.value) }}/>
+        onChange={e => {
+          const f = e.target.files?.[0]; if (f) { setPdfFile(f); onFile?.(f) }
+        }}/>
+      <input className="input text-xs" type="url"
+        placeholder="O pega URL del documento (Google Drive, etc.)..."
+        value={urlVal}
+        onChange={e => { setUrlVal(e.target.value); onUrl?.(e.target.value) }}/>
     </div>
   )
 }
 
 // ============================================================
-// NOTICIAS
+// NOTICIAS — usa noticiasAdminService (CON JWT) para ver borradores
 // ============================================================
 export function AdminNoticiasPage() {
   const qc = useQueryClient()
-  const [filtro, setFiltro]     = useState('todos')
+  const [filtro,    setFiltro]    = useState('todos')
   const [confirmId, setConfirmId] = useState(null)
 
+  // ── CLAVE: noticiasAdminService usa `api` autenticado ─────────────────────
+  // El backend detecta el JWT y devuelve también los borradores.
+  // Pedimos 500 para ver todos en el panel (paginación interna por filtros).
   const { data, isLoading } = useQuery({
     queryKey: ['noticias-admin'],
-    queryFn: () => noticiasService.getAll({ limit: 200 }),
+    queryFn:  () => noticiasAdminService.getAll({ limit: 500 }),
   })
   const all  = data?.data?.data || []
   const list = filtrar(all, filtro)
 
-  const del = useMutation({ mutationFn: noticiasService.delete,
-    onSuccess: () => { qc.invalidateQueries(['noticias-admin']); toast.success('Eliminada') }})
+  const del = useMutation({
+    mutationFn: noticiasService.delete,
+    onSuccess: () => { qc.invalidateQueries(['noticias-admin']); toast.success('Eliminada') },
+  })
 
-  const pub = useMutation({ mutationFn: noticiasService.publicar,
-    onSuccess: () => { qc.invalidateQueries(['noticias-admin']); toast.success('Estado actualizado') }})
+  const pub = useMutation({
+    mutationFn: noticiasService.publicar,
+    onSuccess: () => { qc.invalidateQueries(['noticias-admin']); toast.success('Estado actualizado') },
+  })
 
+  // ── Toggle destacado EXCLUSIVO ─────────────────────────────────────────────
+  // Si la noticia NO está destacada → la marcamos y el backend desmarca las demás.
+  // Si YA está destacada → la desmarcamos sin afectar otras.
   const dest = useMutation({
-    mutationFn: n => api.put(`/noticias/${n.id}`, { destacado: !parseBool(n.destacado) }),
-    onSuccess: () => { qc.invalidateQueries(['noticias-admin']); toast.success('Destacado actualizado') }})
+    mutationFn: (n) => {
+      const nuevoDest = !parseBool(n.destacado)
+      return api.put(`/noticias/${n.id}`, { destacado: nuevoDest })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries(['noticias-admin'])
+      toast.success('Noticia destacada actualizada')
+    },
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
+  })
 
   return (
     <div>
       <SectionHeader title="Noticias" subtitle={`${all.length} total`}>
-        <Link to="/admin/noticias/nueva" className="btn btn-primary btn-sm"><Plus size={15}/> Nueva noticia</Link>
+        <Link to="/admin/noticias/nueva" className="btn btn-primary btn-sm">
+          <Plus size={15}/> Nueva noticia
+        </Link>
       </SectionHeader>
+
+      {/* Info sobre destacado */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4 text-xs text-amber-700 flex items-center gap-2">
+        <Star size={13} className="text-yellow-500 flex-shrink-0"/>
+        Solo <strong className="mx-1">una</strong> noticia puede estar destacada a la vez.
+        Al marcar una nueva, la anterior se desmarca automáticamente.
+      </div>
+
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <FiltroEstado value={filtro} onChange={setFiltro} showDestacado/>
         <span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span>
       </div>
+
       {isLoading ? <LoadingCenter/> : (
         <div className="card overflow-hidden">
           <table className="table-pro w-full">
-            <thead><tr><th>Noticia</th><th className="hidden md:table-cell">Categoría</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Noticia</th>
+                <th className="hidden md:table-cell">Categoría</th>
+                <th>Estado</th>
+                <th className="text-right pr-4">Acciones</th>
+              </tr>
+            </thead>
             <tbody>
-              {list.length===0 && <tr><td colSpan={4} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
+              {list.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center py-10 text-gray-400">
+                    Sin resultados para este filtro
+                  </td>
+                </tr>
+              )}
               {list.map(n => (
                 <tr key={n.id}>
                   <td>
                     <div className="flex items-center gap-3">
-                      {n.imagen_url && <img src={n.imagen_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" onError={e=>e.target.style.display='none'}/>}
+                      {n.imagen_url && (
+                        <img src={n.imagen_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                          onError={e => e.target.style.display = 'none'}/>
+                      )}
                       <div>
                         <p className="font-semibold text-sm truncate max-w-[200px]">{n.titulo}</p>
                         <p className="text-xs text-gray-400">{formatDate(n.creado_en)}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="hidden md:table-cell">{n.categoria && <Badge color={n.color_hex||'#1A5276'}>{n.categoria}</Badge>}</td>
+                  <td className="hidden md:table-cell">
+                    {n.categoria && <Badge color={n.color_hex || '#1A5276'}>{n.categoria}</Badge>}
+                  </td>
                   <td>
                     <div className="flex items-center gap-1 flex-wrap">
                       <EstadoBadge publicado={n.publicado} onClick={() => pub.mutate(n.id)}/>
@@ -250,8 +311,14 @@ export function AdminNoticiasPage() {
                   </td>
                   <td className="text-right pr-4">
                     <div className="flex gap-2 justify-end">
-                      <Link to={`/admin/noticias/${n.id}/editar`} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></Link>
-                      <button onClick={() => setConfirmId(n.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                      <Link to={`/admin/noticias/${n.id}/editar`}
+                        className="btn btn-ghost btn-sm p-1.5" title="Editar">
+                        <Pencil size={14}/>
+                      </Link>
+                      <button onClick={() => setConfirmId(n.id)}
+                        className="btn btn-ghost btn-sm p-1.5 text-red-500" title="Eliminar">
+                        <Trash2 size={14}/>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -260,30 +327,40 @@ export function AdminNoticiasPage() {
           </table>
         </div>
       )}
-      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)}
+
+      <ConfirmDialog
+        open={!!confirmId}
+        onClose={() => setConfirmId(null)}
         onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }}
-        title="Eliminar noticia" message="¿Eliminar esta noticia permanentemente?"/>
+        title="Eliminar noticia"
+        message="¿Eliminar esta noticia permanentemente?"/>
     </div>
   )
 }
 
+// ============================================================
+// FORMULARIO NOTICIA (crear / editar)
+// ============================================================
 export function NoticiaFormPage() {
-  const { id } = useParams(); const isEdit = !!id
-  const navigate = useNavigate(); const qc = useQueryClient()
+  const { id }     = useParams(); const isEdit = !!id
+  const navigate   = useNavigate(); const qc = useQueryClient()
   const [imgFile, setImgFile] = useState(null)
   const [imgUrl,  setImgUrl]  = useState('')
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm()
-  const { data: catData } = useQuery({ queryKey:['cats'], queryFn:() => categoriasService.getAll('noticias') })
+  const { data: catData } = useQuery({
+    queryKey: ['cats'],
+    queryFn:  () => categoriasService.getAll('noticias'),
+  })
   const cats = catData?.data?.data || []
 
-  // Cargar noticia actual para edición
+  // Cargar noticia actual para edición usando API autenticada
   const { data: noticiaData } = useQuery({
     queryKey: ['noticia-edit', id],
-    enabled: isEdit,
-    queryFn: async () => {
-      const r = await noticiasService.getAll({ limit: 500 })
+    enabled:  isEdit,
+    queryFn:  async () => {
+      const r = await noticiasAdminService.getAll({ limit: 500 })
       return r.data?.data?.find(n => String(n.id) === id)
-    }
+    },
   })
 
   useEffect(() => {
@@ -308,8 +385,8 @@ export function NoticiaFormPage() {
       if (d.categoria_id) fd.append('categoria_id', d.categoria_id)
       fd.append('destacado', d.destacado ? 'true' : 'false')
       fd.append('publicado', d.publicado ? 'true' : 'false')
-      if (imgFile instanceof File) fd.append('imagen', imgFile)
-      else if (imgUrl?.trim())     fd.append('imagen_url', imgUrl.trim())
+      if (imgFile instanceof File)  fd.append('imagen',     imgFile)
+      else if (imgUrl?.trim())      fd.append('imagen_url', imgUrl.trim())
 
       if (isEdit) await api.put(`/noticias/${id}`, fd, MULTIPART)
       else        await api.post('/noticias', fd, MULTIPART)
@@ -318,7 +395,9 @@ export function NoticiaFormPage() {
       qc.invalidateQueries(['noticias-admin'])
       qc.invalidateQueries(['noticia-edit', id])
       navigate('/admin/noticias')
-    } catch(e) { toast.error(e.response?.data?.message || 'Error al guardar') }
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al guardar')
+    }
   }
 
   return (
@@ -327,34 +406,46 @@ export function NoticiaFormPage() {
         <Link to="/admin/noticias" className="btn btn-ghost btn-sm">← Volver</Link>
       </SectionHeader>
       <form onSubmit={handleSubmit(onSubmit)} className="card p-6 space-y-4">
-        <div><label className="label">Título *</label>
-          <input className="input" {...register('titulo',{required:'Requerido'})}/>
+        <div>
+          <label className="label">Título *</label>
+          <input className="input" {...register('titulo', { required: 'Requerido' })}/>
           {errors.titulo && <p className="text-red-500 text-xs mt-1">{errors.titulo.message}</p>}
         </div>
-        <div><label className="label">Categoría</label>
+        <div>
+          <label className="label">Categoría</label>
           <select className="input" {...register('categoria_id')}>
             <option value="">Sin categoría</option>
             {cats.map(c => <option key={c.id} value={String(c.id)}>{c.nombre}</option>)}
           </select>
         </div>
-        <div><label className="label">Resumen</label>
+        <div>
+          <label className="label">Resumen</label>
           <textarea className="input h-20 resize-none" {...register('resumen')}/>
         </div>
-        <div><label className="label">Contenido *</label>
-          <textarea className="input h-48 resize-y" {...register('contenido',{required:'Requerido'})}/>
+        <div>
+          <label className="label">Contenido *</label>
+          <textarea className="input h-48 resize-y" {...register('contenido', { required: 'Requerido' })}/>
           {errors.contenido && <p className="text-red-500 text-xs mt-1">{errors.contenido.message}</p>}
         </div>
-        <ImageField label="Imagen destacada" currentUrl={imgUrl}
+        <ImageField
+          label="Imagen destacada (archivo o link de Google Drive)"
+          currentUrl={imgUrl}
           onFile={f => { setImgFile(f); setImgUrl('') }}
           onUrl={u  => { setImgUrl(u);  setImgFile(null) }}/>
         <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" className="w-4 h-4" {...register('destacado')}/><Star size={14} className="text-yellow-500"/> Destacar
+            <input type="checkbox" className="w-4 h-4" {...register('destacado')}/>
+            <Star size={14} className="text-yellow-500"/> Destacar en inicio
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" className="w-4 h-4" {...register('publicado')}/><CheckCircle size={14} className="text-green-500"/> Publicar
+            <input type="checkbox" className="w-4 h-4" {...register('publicado')}/>
+            <CheckCircle size={14} className="text-green-500"/> Publicar ahora
           </label>
         </div>
+        {/* Aviso sobre destacado exclusivo */}
+        <p className="text-xs text-gray-400 -mt-2">
+          ★ Marcar como destacada desmarcará cualquier otra noticia que esté destacada actualmente.
+        </p>
         <div className="flex gap-3">
           <button type="submit" disabled={isSubmitting} className="btn btn-primary">
             {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear noticia'}
@@ -367,43 +458,45 @@ export function NoticiaFormPage() {
 }
 
 // ============================================================
-// DOCENTES — CRUD completo corregido
+// DOCENTES
 // ============================================================
 export function AdminDocentesPage() {
   const qc = useQueryClient()
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const [imgFile, setImgFile] = useState(null)
-  const [imgUrl,  setImgUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['doc-admin'], queryFn: docentesService.getAll })
+  const [imgFile,   setImgFile]   = useState(null)
+  const [imgUrl,    setImgUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['doc-admin'], queryFn: docentesService.getAll })
   const list = data?.data?.data || []
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
   const openEdit = d => {
-    setEditing(d); setImgFile(null); setImgUrl(d.foto_url||'')
-    reset({ nombre_completo:d.nombre_completo||'', titulo_academico:d.titulo_academico||'', especialidad:d.especialidad||'', email:d.email||'', bio_corta:d.bio_corta||'', tipo:d.tipo||'titular' })
+    setEditing(d); setImgFile(null); setImgUrl(d.foto_url || '')
+    reset({ nombre_completo: d.nombre_completo || '', titulo_academico: d.titulo_academico || '', especialidad: d.especialidad || '', email: d.email || '', bio_corta: d.bio_corta || '', tipo: d.tipo || 'titular' })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setImgFile(null); setImgUrl('')
-    reset({ nombre_completo:'', titulo_academico:'', especialidad:'', email:'', bio_corta:'', tipo:'titular' })
+    reset({ nombre_completo: '', titulo_academico: '', especialidad: '', email: '', bio_corta: '', tipo: 'titular' })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined && String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (imgFile instanceof File) fd.append('foto', imgFile)
       else if (imgUrl?.trim())     fd.append('foto_url', imgUrl.trim())
       return editing ? api.put(`/docentes/${editing.id}`, fd, MULTIPART) : api.post('/docentes', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['doc-admin']); toast.success(editing?'Actualizado':'Creado'); setModal(false) },
-    onError: e => toast.error(e.response?.data?.message||'Error'),
+    onSuccess: () => { qc.invalidateQueries(['doc-admin']); toast.success(editing ? 'Actualizado' : 'Creado'); setModal(false) },
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
   })
-  const del = useMutation({ mutationFn: docentesService.delete,
-    onSuccess: () => { qc.invalidateQueries(['doc-admin']); toast.success('Desactivado') }})
+  const del = useMutation({
+    mutationFn: docentesService.delete,
+    onSuccess: () => { qc.invalidateQueries(['doc-admin']); toast.success('Desactivado') },
+  })
 
   return (
     <div>
@@ -412,17 +505,19 @@ export function AdminDocentesPage() {
       </SectionHeader>
       {isLoading ? <LoadingCenter/> : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {list.length===0 && <div className="col-span-full"><EmptyState title="Sin docentes"/></div>}
+          {list.length === 0 && <div className="col-span-full"><EmptyState title="Sin docentes"/></div>}
           {list.map(d => (
             <div key={d.id} className="card p-4 flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl overflow-hidden bg-secondary-50 flex-shrink-0 flex items-center justify-center">
-                {d.foto_url ? <img src={d.foto_url} alt="" className="w-full h-full object-cover" onError={e=>e.target.style.display='none'}/> : <span className="text-secondary font-bold text-lg">{d.nombre_completo.charAt(0)}</span>}
+                {d.foto_url
+                  ? <img src={d.foto_url} alt="" className="w-full h-full object-cover" onError={e => e.target.style.display = 'none'}/>
+                  : <span className="text-secondary font-bold text-lg">{d.nombre_completo.charAt(0)}</span>}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">{d.nombre_completo}</p>
                 {d.titulo_academico && <p className="text-xs text-primary">{d.titulo_academico}</p>}
                 {d.especialidad && <p className="text-xs text-gray-500 line-clamp-1">{d.especialidad}</p>}
-                <Badge color={d.tipo==='titular'?'#1A5276':'#C0392B'}>{d.tipo}</Badge>
+                <Badge color={d.tipo === 'titular' ? '#1A5276' : '#C0392B'}>{d.tipo}</Badge>
               </div>
               <div className="flex flex-col gap-1">
                 <button onClick={() => openEdit(d)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
@@ -433,9 +528,9 @@ export function AdminDocentesPage() {
         </div>
       )}
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Desactivar" message="¿Desactivar este docente?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar docente':'Nuevo docente'} size="lg">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar docente' : 'Nuevo docente'} size="lg">
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo',{required:true})}/></div>
+          <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo', { required: true })}/></div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div><label className="label">Título académico</label><input className="input" {...register('titulo_academico')}/></div>
             <div><label className="label">Tipo</label>
@@ -447,8 +542,10 @@ export function AdminDocentesPage() {
           <div><label className="label">Especialidad</label><input className="input" {...register('especialidad')}/></div>
           <div><label className="label">Correo</label><input className="input" type="email" {...register('email')}/></div>
           <div><label className="label">Bio corta</label><textarea className="input h-20 resize-none" {...register('bio_corta')}/></div>
-          <ImageField label="Foto del docente" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/>
-          <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">{isSubmitting?'Guardando...':'Guardar'}</button>
+          <ImageField label="Foto del docente" currentUrl={imgUrl}
+            onFile={f => { setImgFile(f); setImgUrl('') }}
+            onUrl={u  => { setImgUrl(u);  setImgFile(null) }}/>
+          <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">{isSubmitting ? 'Guardando...' : 'Guardar'}</button>
         </form>
       </Modal>
     </div>
@@ -460,169 +557,91 @@ export function AdminDocentesPage() {
 // ============================================================
 export function AdminAlumnosPage() {
   const qc = useQueryClient()
-  const [filtro, setFiltro]   = useState('todos')
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [filtro,    setFiltro]    = useState('todos')
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const [imgFile, setImgFile] = useState(null)
-  const [imgUrl,  setImgUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['al-admin'], queryFn:() => api.get('/mejores-alumnos?all=1').then(r=>r.data) })
-  const all = data?.data||[]; const list = filtrar(all, filtro)
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const [imgFile,   setImgFile]   = useState(null)
+  const [imgUrl,    setImgUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['al-admin'], queryFn: () => api.get('/mejores-alumnos?all=1').then(r => r.data) })
+  const all  = data?.data || []; const list = filtrar(all, filtro)
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
   const openEdit = a => {
-    setEditing(a); setImgFile(null); setImgUrl(a.foto_url||'')
-    reset({ nombre_completo:a.nombre_completo||'', promedio:a.promedio||'', semestre_actual:a.semestre_actual||'', gestion:a.gestion||'', logros:a.logros||'', publicado:parseBool(a.publicado) })
+    setEditing(a); setImgFile(null); setImgUrl(a.foto_url || '')
+    reset({ nombre_completo: a.nombre_completo || '', promedio: a.promedio || '', semestre_actual: a.semestre_actual || '', gestion: a.gestion || '', logros: a.logros || '', publicado: parseBool(a.publicado) })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setImgFile(null); setImgUrl('')
-    reset({ nombre_completo:'', promedio:'', semestre_actual:'', gestion:'', logros:'', publicado:false })
+    reset({ nombre_completo: '', promedio: '', semestre_actual: '', gestion: '', logros: '', publicado: false })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k, typeof v==='boolean'?String(v):String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (imgFile instanceof File) fd.append('foto', imgFile)
       else if (imgUrl?.trim())     fd.append('foto_url', imgUrl.trim())
-      return editing ? api.put(`/mejores-alumnos/${editing.id}`,fd,MULTIPART) : api.post('/mejores-alumnos',fd,MULTIPART)
+      return editing ? api.put(`/mejores-alumnos/${editing.id}`, fd, MULTIPART) : api.post('/mejores-alumnos', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Guardado'); setModal(false) }
+    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Guardado'); setModal(false) },
   })
-  const pub = useMutation({ mutationFn: a => api.put(`/mejores-alumnos/${a.id}`,{publicado:!parseBool(a.publicado)}),
-    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Estado actualizado') }})
-  const del = useMutation({ mutationFn: id => api.delete(`/mejores-alumnos/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Eliminado') }})
+  const pub = useMutation({
+    mutationFn: a => api.put(`/mejores-alumnos/${a.id}`, { publicado: !parseBool(a.publicado) }),
+    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Estado actualizado') },
+  })
+  const del = useMutation({
+    mutationFn: id => api.delete(`/mejores-alumnos/${id}`),
+    onSuccess: () => { qc.invalidateQueries(['al-admin']); toast.success('Eliminado') },
+  })
 
   return (
     <div>
       <SectionHeader title="Mejores estudiantes" subtitle={`${all.length} registros`}>
         <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Agregar</button>
       </SectionHeader>
-      <div className="flex items-center gap-3 mb-4 flex-wrap"><FiltroEstado value={filtro} onChange={setFiltro}/><span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span></div>
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <FiltroEstado value={filtro} onChange={setFiltro}/>
+        <span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span>
+      </div>
       {isLoading ? <LoadingCenter/> : (
-        <div className="card overflow-hidden"><table className="table-pro w-full">
-          <thead><tr><th>#</th><th>Nombre</th><th>Promedio</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
-          <tbody>
-            {list.length===0 && <tr><td colSpan={6} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
-            {list.map((a,i) => (
-              <tr key={a.id}>
-                <td><span className={`w-7 h-7 rounded-full inline-flex items-center justify-center text-xs font-bold text-white ${i===0?'bg-yellow-400':i===1?'bg-gray-400':i===2?'bg-yellow-700':'bg-secondary'}`}>{i+1}</span></td>
-                <td className="font-medium text-sm">{a.nombre_completo}</td>
-                <td className="font-bold text-primary">{a.promedio}</td>
-                <td className="hidden sm:table-cell text-gray-500 text-sm">{a.gestion}</td>
-                <td><EstadoBadge publicado={a.publicado} onClick={() => pub.mutate(a)}/></td>
-                <td className="text-right pr-4"><div className="flex gap-2 justify-end">
-                  <button onClick={() => openEdit(a)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
-                  <button onClick={() => setConfirmId(a.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-                </div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
-      )}
-      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar" message="¿Eliminar este alumno del ranking?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar alumno':'Agregar alumno'}>
-        <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo',{required:true})}/></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Promedio *</label><input className="input" type="number" step="0.01" min="0" max="100" {...register('promedio',{required:true})}/></div>
-            <div><label className="label">Semestre</label><input className="input" type="number" min="1" max="10" {...register('semestre_actual')}/></div>
-          </div>
-          <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion',{required:true})}/></div>
-          <div><label className="label">Logros</label><textarea className="input h-20 resize-none" {...register('logros')}/></div>
-          <ImageField label="Foto" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/>
-          <div className="flex items-center gap-2"><input type="checkbox" id="pub_al" {...register('publicado')}/><label htmlFor="pub_al" className="text-sm">Publicar</label></div>
-          <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button>
-        </form>
-      </Modal>
-    </div>
-  )
-}
-
-// ============================================================
-// EGRESADOS
-// ============================================================
-export function AdminEgresadosPage() {
-  const qc = useQueryClient()
-  const [filtro, setFiltro]   = useState('todos')
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
-  const [confirmId, setConfirmId] = useState(null)
-  const [imgFile, setImgFile] = useState(null)
-  const [imgUrl,  setImgUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['eg-admin'], queryFn:()=>api.get('/egresados?all=1').then(r=>r.data) })
-  const all = data?.data||[]; const list = filtrar(all, filtro)
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
-
-  const openEdit = e => {
-    setEditing(e); setImgFile(null); setImgUrl(e.foto_url||'')
-    reset({ nombre_completo:e.nombre_completo||'', anio_egreso:e.anio_egreso||'', ocupacion_actual:e.ocupacion_actual||'', empresa_institucion:e.empresa_institucion||'', testimonio:e.testimonio||'', linkedin_url:e.linkedin_url||'', publicado:parseBool(e.publicado) })
-    setModal(true)
-  }
-  const openNew = () => {
-    setEditing(null); setImgFile(null); setImgUrl('')
-    reset({ nombre_completo:'', anio_egreso:'', ocupacion_actual:'', empresa_institucion:'', testimonio:'', linkedin_url:'', publicado:false })
-    setModal(true)
-  }
-
-  const save = useMutation({
-    mutationFn: async d => {
-      const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
-      if (imgFile instanceof File) fd.append('foto', imgFile)
-      else if (imgUrl?.trim())     fd.append('foto_url', imgUrl.trim())
-      return editing ? api.put(`/egresados/${editing.id}`,fd,MULTIPART) : api.post('/egresados',fd,MULTIPART)
-    },
-    onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Guardado'); setModal(false) }
-  })
-  const pub = useMutation({ mutationFn: e => api.put(`/egresados/${e.id}`,{publicado:!parseBool(e.publicado)}),
-    onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Estado actualizado') }})
-  const del = useMutation({ mutationFn: id => api.delete(`/egresados/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Eliminado') }})
-
-  return (
-    <div>
-      <SectionHeader title="Egresados destacados" subtitle={`${all.length} perfiles`}>
-        <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Agregar egresado</button>
-      </SectionHeader>
-      <div className="flex items-center gap-3 mb-4 flex-wrap"><FiltroEstado value={filtro} onChange={setFiltro}/><span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span></div>
-      {isLoading ? <LoadingCenter/> : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {list.length===0 && <div className="col-span-full"><EmptyState title="Sin egresados"/></div>}
-          {list.map(e => (
-            <div key={e.id} className="card p-4 flex gap-3">
-              <div className="w-12 h-12 rounded-xl overflow-hidden bg-secondary-50 flex-shrink-0 flex items-center justify-center">
-                {e.foto_url ? <img src={e.foto_url} alt="" className="w-full h-full object-cover" onError={ev=>ev.target.style.display='none'}/> : <span className="text-secondary font-bold text-xl">{e.nombre_completo.charAt(0)}</span>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{e.nombre_completo}</p>
-                {e.ocupacion_actual && <p className="text-xs text-primary">{e.ocupacion_actual}</p>}
-                {e.anio_egreso && <p className="text-xs text-gray-400">Egresado {e.anio_egreso}</p>}
-                <div className="mt-1"><EstadoBadge publicado={e.publicado} onClick={() => pub.mutate(e)}/></div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <button onClick={() => openEdit(e)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
-                <button onClick={() => setConfirmId(e.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-              </div>
-            </div>
-          ))}
+        <div className="card overflow-hidden">
+          <table className="table-pro w-full">
+            <thead><tr><th>#</th><th>Nombre</th><th>Promedio</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <tbody>
+              {list.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
+              {list.map((a, i) => (
+                <tr key={a.id}>
+                  <td><span className={`w-7 h-7 rounded-full inline-flex items-center justify-center text-xs font-bold text-white ${i === 0 ? 'bg-yellow-400' : i === 1 ? 'bg-gray-400' : i === 2 ? 'bg-yellow-700' : 'bg-secondary'}`}>{i + 1}</span></td>
+                  <td className="font-medium text-sm">{a.nombre_completo}</td>
+                  <td className="font-bold text-primary">{a.promedio}</td>
+                  <td className="hidden sm:table-cell text-gray-500 text-sm">{a.gestion}</td>
+                  <td><EstadoBadge publicado={a.publicado} onClick={() => pub.mutate(a)}/></td>
+                  <td className="text-right pr-4"><div className="flex gap-2 justify-end">
+                    <button onClick={() => openEdit(a)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
+                    <button onClick={() => setConfirmId(a.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar egresado" message="¿Eliminar este perfil?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar egresado':'Nuevo egresado'} size="lg">
-        <form onSubmit={handleSubmit(d => save.mutate(d))} className="grid sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2"><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo',{required:true})}/></div>
-          <div><label className="label">Año de egreso</label><input className="input" type="number" min="1984" max="2030" {...register('anio_egreso')}/></div>
-          <div><label className="label">Ocupación actual</label><input className="input" {...register('ocupacion_actual')}/></div>
-          <div className="sm:col-span-2"><label className="label">Empresa / Institución</label><input className="input" {...register('empresa_institucion')}/></div>
-          <div className="sm:col-span-2"><label className="label">Testimonio</label><textarea className="input h-20 resize-none" {...register('testimonio')}/></div>
-          <div><label className="label">LinkedIn URL</label><input className="input" type="url" {...register('linkedin_url')}/></div>
-          <div><ImageField label="Foto" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/></div>
-          <div className="sm:col-span-2 flex items-center gap-2"><input type="checkbox" id="pub_eg" {...register('publicado')}/><label htmlFor="pub_eg" className="text-sm">Publicado</label></div>
-          <div className="sm:col-span-2"><button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button></div>
+      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar" message="¿Eliminar este alumno del ranking?"/>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar alumno' : 'Agregar alumno'}>
+        <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
+          <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo', { required: true })}/></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="label">Promedio *</label><input className="input" type="number" step="0.01" min="0" max="100" {...register('promedio', { required: true })}/></div>
+            <div><label className="label">Semestre</label><input className="input" type="number" min="1" max="10" {...register('semestre_actual')}/></div>
+          </div>
+          <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion', { required: true })}/></div>
+          <div><label className="label">Logros</label><textarea className="input h-20 resize-none" {...register('logros')}/></div>
+          <ImageField label="Foto" currentUrl={imgUrl} onFile={f => { setImgFile(f); setImgUrl('') }} onUrl={u => { setImgUrl(u); setImgFile(null) }}/>
+          <div className="flex items-center gap-2"><input type="checkbox" id="pub_al" {...register('publicado')}/><label htmlFor="pub_al" className="text-sm">Publicar</label></div>
+          <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button>
         </form>
       </Modal>
     </div>
@@ -634,80 +653,98 @@ export function AdminEgresadosPage() {
 // ============================================================
 export function AdminMultimediaPage() {
   const qc = useQueryClient()
-  const [filtro, setFiltro]   = useState('todos')
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
-  const [confirmId, setConfirmId] = useState(null)
-  const [thumbFile, setThumbFile] = useState(null)
-  const [thumbUrl,  setThumbUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['mm-admin'], queryFn:()=>api.get('/multimedia?all=1').then(r=>r.data) })
-  const all = data?.data||[]; const list = filtrar(all, filtro)
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const [filtro,     setFiltro]    = useState('todos')
+  const [modal,      setModal]     = useState(false)
+  const [editing,    setEditing]   = useState(null)
+  const [confirmId,  setConfirmId] = useState(null)
+  const [thumbFile,  setThumbFile] = useState(null)
+  const [thumbUrl,   setThumbUrl]  = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['mm-admin'], queryFn: () => api.get('/multimedia?all=1').then(r => r.data) })
+  const all  = data?.data || []; const list = filtrar(all, filtro)
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
   const openEdit = m => {
-    setEditing(m); setThumbFile(null); setThumbUrl(m.thumbnail_url||'')
-    reset({ titulo:m.titulo||'', tipo:m.tipo||'video', autor_nombre:m.autor_nombre||'', url_contenido:m.url_contenido||'', materia_origen:m.materia_origen||'', gestion:m.gestion||'', descripcion:m.descripcion||'', destacado:parseBool(m.destacado), publicado:parseBool(m.publicado) })
+    setEditing(m); setThumbFile(null); setThumbUrl(m.thumbnail_url || '')
+    reset({ titulo: m.titulo || '', tipo: m.tipo || 'video', autor_nombre: m.autor_nombre || '', url_contenido: m.url_contenido || '', materia_origen: m.materia_origen || '', gestion: m.gestion || '', descripcion: m.descripcion || '', destacado: parseBool(m.destacado), publicado: parseBool(m.publicado) })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setThumbFile(null); setThumbUrl('')
-    reset({ titulo:'', tipo:'video', autor_nombre:'', url_contenido:'', materia_origen:'', gestion:'', descripcion:'', destacado:false, publicado:true })
+    reset({ titulo: '', tipo: 'video', autor_nombre: '', url_contenido: '', materia_origen: '', gestion: '', descripcion: '', destacado: false, publicado: true })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (thumbFile instanceof File) fd.append('thumbnail', thumbFile)
       else if (thumbUrl?.trim())     fd.append('thumbnail_url', thumbUrl.trim())
-      return editing ? api.put(`/multimedia/${editing.id}`,fd,MULTIPART) : api.post('/multimedia',fd,MULTIPART)
+      return editing ? api.put(`/multimedia/${editing.id}`, fd, MULTIPART) : api.post('/multimedia', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Guardado'); setModal(false) }
+    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Guardado'); setModal(false) },
   })
-  const pub = useMutation({ mutationFn: multimediaService.publicar,
-    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Estado actualizado') }})
-  const del = useMutation({ mutationFn: id => api.delete(`/multimedia/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Eliminado') }})
+  const pub = useMutation({
+    mutationFn: multimediaService.publicar,
+    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Estado actualizado') },
+  })
+  const del = useMutation({
+    mutationFn: id => api.delete(`/multimedia/${id}`),
+    onSuccess: () => { qc.invalidateQueries(['mm-admin']); toast.success('Eliminado') },
+  })
 
   return (
     <div>
       <SectionHeader title="Multimedia estudiantil" subtitle={`${all.length} trabajos`}>
         <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Registrar trabajo</button>
       </SectionHeader>
-      <div className="flex items-center gap-3 mb-4 flex-wrap"><FiltroEstado value={filtro} onChange={setFiltro}/><span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span></div>
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <FiltroEstado value={filtro} onChange={setFiltro}/>
+        <span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span>
+      </div>
       {isLoading ? <LoadingCenter/> : (
-        <div className="card overflow-hidden"><table className="table-pro w-full">
-          <thead><tr><th>Trabajo</th><th className="hidden sm:table-cell">Autor</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
-          <tbody>
-            {list.length===0 && <tr><td colSpan={4} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
-            {list.map(m => {
-              const ytId = m.url_contenido?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\n?#]+)/)?.[1]
-              const thumb = m.thumbnail_url||(ytId?`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`:null)
-              return (<tr key={m.id}>
-                <td><div className="flex items-center gap-3">{thumb && <img src={thumb} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" onError={e=>e.target.style.display='none'}/>}<p className="font-medium text-sm truncate max-w-[180px]">{m.titulo}</p></div></td>
-                <td className="hidden sm:table-cell text-gray-500 text-sm">{m.autor_nombre}</td>
-                <td><EstadoBadge publicado={m.publicado} onClick={() => pub.mutate(m.id)}/></td>
-                <td className="text-right pr-4"><div className="flex gap-2 justify-end">
-                  <button onClick={() => openEdit(m)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
-                  <button onClick={() => setConfirmId(m.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-                </div></td>
-              </tr>)
-            })}
-          </tbody>
-        </table></div>
+        <div className="card overflow-hidden">
+          <table className="table-pro w-full">
+            <thead><tr><th>Trabajo</th><th className="hidden sm:table-cell">Autor</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <tbody>
+              {list.length === 0 && <tr><td colSpan={4} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
+              {list.map(m => {
+                const ytId  = m.url_contenido?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\n?#]+)/)?.[1]
+                const thumb = m.thumbnail_url || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null)
+                return (
+                  <tr key={m.id}>
+                    <td><div className="flex items-center gap-3">
+                      {thumb && <img src={thumb} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" onError={e => e.target.style.display = 'none'}/>}
+                      <p className="font-medium text-sm truncate max-w-[180px]">{m.titulo}</p>
+                    </div></td>
+                    <td className="hidden sm:table-cell text-gray-500 text-sm">{m.autor_nombre}</td>
+                    <td><EstadoBadge publicado={m.publicado} onClick={() => pub.mutate(m.id)}/></td>
+                    <td className="text-right pr-4"><div className="flex gap-2 justify-end">
+                      <button onClick={() => openEdit(m)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
+                      <button onClick={() => setConfirmId(m.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                    </div></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar" message="¿Eliminar este trabajo?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar trabajo':'Registrar trabajo'} size="lg">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar trabajo' : 'Registrar trabajo'} size="lg">
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="grid sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2"><label className="label">Título *</label><input className="input" {...register('titulo',{required:true})}/></div>
-          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['video','podcast','fotografia','reportaje','otro'].map(t=><option key={t} value={t}>{t}</option>)}</select></div>
-          <div><label className="label">Autor *</label><input className="input" {...register('autor_nombre',{required:true})}/></div>
+          <div className="sm:col-span-2"><label className="label">Título *</label><input className="input" {...register('titulo', { required: true })}/></div>
+          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['video','podcast','fotografia','reportaje','otro'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+          <div><label className="label">Autor *</label><input className="input" {...register('autor_nombre', { required: true })}/></div>
           <div className="sm:col-span-2"><label className="label">URL contenido</label><input className="input" type="url" {...register('url_contenido')}/></div>
           <div><label className="label">Materia</label><input className="input" {...register('materia_origen')}/></div>
           <div><label className="label">Gestión</label><input className="input" placeholder="2026-I" {...register('gestion')}/></div>
           <div className="sm:col-span-2"><label className="label">Descripción</label><textarea className="input h-20 resize-none" {...register('descripcion')}/></div>
-          <div className="sm:col-span-2"><ImageField label="Miniatura" currentUrl={thumbUrl} onFile={f=>{setThumbFile(f);setThumbUrl('')}} onUrl={u=>{setThumbUrl(u);setThumbFile(null)}}/></div>
+          <div className="sm:col-span-2">
+            <ImageField label="Miniatura" currentUrl={thumbUrl}
+              onFile={f => { setThumbFile(f); setThumbUrl('') }}
+              onUrl={u  => { setThumbUrl(u);  setThumbFile(null) }}/>
+          </div>
           <div className="sm:col-span-2 flex gap-4">
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" {...register('destacado')}/> Destacado</label>
             <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" {...register('publicado')}/> Publicar</label>
@@ -720,55 +757,62 @@ export function AdminMultimediaPage() {
 }
 
 // ============================================================
-// CONVOCATORIAS — archivo replace corregido
+// CONVOCATORIAS
 // ============================================================
 export function AdminConvocatoriasPage() {
   const qc = useQueryClient()
-  const [filtro, setFiltro]   = useState('todos')
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [filtro,    setFiltro]    = useState('todos')
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const [pdfFile, setPdfFile] = useState(null)
-  const [pdfUrl,  setPdfUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['conv-admin'], queryFn:()=>api.get('/convocatorias?all=1').then(r=>r.data) })
-  const all = data?.data||[]; const list = filtrar(all, filtro)
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const [pdfFile,   setPdfFile]   = useState(null)
+  const [pdfUrl,    setPdfUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['conv-admin'], queryFn: () => api.get('/convocatorias?all=1').then(r => r.data) })
+  const all  = data?.data || []; const list = filtrar(all, filtro)
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
   const openEdit = c => {
-    setEditing(c); setPdfFile(null); setPdfUrl(c.archivo_url||'')
-    reset({ titulo:c.titulo||'', tipo:c.tipo||'otro', descripcion:c.descripcion||'', fecha_limite:c.fecha_limite||'', publicado:parseBool(c.publicado) })
+    setEditing(c); setPdfFile(null); setPdfUrl(c.archivo_url || '')
+    reset({ titulo: c.titulo || '', tipo: c.tipo || 'otro', descripcion: c.descripcion || '', fecha_limite: c.fecha_limite || '', publicado: parseBool(c.publicado) })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setPdfFile(null); setPdfUrl('')
-    reset({ titulo:'', tipo:'otro', descripcion:'', fecha_limite:'', publicado:true })
+    reset({ titulo: '', tipo: 'otro', descripcion: '', fecha_limite: '', publicado: true })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (pdfFile instanceof File) fd.append('archivo', pdfFile)
       else if (pdfUrl?.trim())     fd.append('archivo_url', pdfUrl.trim())
-      return editing ? api.put(`/convocatorias/${editing.id}`,fd,MULTIPART) : api.post('/convocatorias',fd,MULTIPART)
+      return editing ? api.put(`/convocatorias/${editing.id}`, fd, MULTIPART) : api.post('/convocatorias', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Guardada'); setModal(false) }
+    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Guardada'); setModal(false) },
   })
-  const pub = useMutation({ mutationFn: c => api.put(`/convocatorias/${c.id}`,{publicado:!parseBool(c.publicado)}),
-    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Estado actualizado') }})
-  const del = useMutation({ mutationFn: id => api.delete(`/convocatorias/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Eliminada') }})
+  const pub = useMutation({
+    mutationFn: c => api.put(`/convocatorias/${c.id}`, { publicado: !parseBool(c.publicado) }),
+    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Estado actualizado') },
+  })
+  const del = useMutation({
+    mutationFn: id => api.delete(`/convocatorias/${id}`),
+    onSuccess: () => { qc.invalidateQueries(['conv-admin']); toast.success('Eliminada') },
+  })
 
   return (
     <div>
       <SectionHeader title="Convocatorias" subtitle={`${all.length} registros`}>
         <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Nueva convocatoria</button>
       </SectionHeader>
-      <div className="flex items-center gap-3 mb-4 flex-wrap"><FiltroEstado value={filtro} onChange={setFiltro}/><span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span></div>
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <FiltroEstado value={filtro} onChange={setFiltro}/>
+        <span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span>
+      </div>
       {isLoading ? <LoadingCenter/> : (
         <div className="space-y-3">
-          {list.length===0 && <EmptyState title="Sin convocatorias"/>}
+          {list.length === 0 && <EmptyState title="Sin convocatorias"/>}
           {list.map(c => (
             <div key={c.id} className="card p-4">
               <div className="flex items-start justify-between gap-3">
@@ -777,7 +821,7 @@ export function AdminConvocatoriasPage() {
                   <p className="font-semibold text-gray-800">{c.titulo}</p>
                   {c.fecha_limite && <p className="text-xs text-primary mt-0.5">Hasta: {formatDate(c.fecha_limite)}</p>}
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">{c.descripcion}</p>
-                  {c.archivo_url && <a href={c.archivo_url} target="_blank" rel="noreferrer" className="text-xs text-secondary hover:underline mt-1 block">Ver documento adjunto</a>}
+                  {c.archivo_url && <a href={c.archivo_url} target="_blank" rel="noreferrer" className="text-xs text-secondary hover:underline mt-1 block">Ver documento</a>}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
                   <button onClick={() => openEdit(c)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
@@ -788,12 +832,12 @@ export function AdminConvocatoriasPage() {
           ))}
         </div>
       )}
-      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar convocatoria" message="¿Eliminar esta convocatoria?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar convocatoria':'Nueva convocatoria'} size="lg">
+      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar" message="¿Eliminar esta convocatoria?"/>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar convocatoria' : 'Nueva convocatoria'} size="lg">
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
-          <div><label className="label">Título *</label><input className="input" {...register('titulo',{required:true})}/></div>
-          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['docentes','pasantias','investigacion','becas','otro'].map(t=><option key={t} value={t}>{t}</option>)}</select></div>
-          <div><label className="label">Descripción *</label><textarea className="input h-28 resize-none" {...register('descripcion',{required:true})}/></div>
+          <div><label className="label">Título *</label><input className="input" {...register('titulo', { required: true })}/></div>
+          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['docentes','pasantias','investigacion','becas','otro'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+          <div><label className="label">Descripción *</label><textarea className="input h-28 resize-none" {...register('descripcion', { required: true })}/></div>
           <div><label className="label">Fecha límite</label><input className="input" type="date" {...register('fecha_limite')}/></div>
           <FileField label="Documento PDF / Enlace" currentUrl={pdfUrl}
             onFile={f => { setPdfFile(f); setPdfUrl('') }}
@@ -807,42 +851,44 @@ export function AdminConvocatoriasPage() {
 }
 
 // ============================================================
-// TRÁMITES — archivo replace corregido
+// TRÁMITES
 // ============================================================
 export function AdminTramitesPage() {
   const qc = useQueryClient()
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const [pdfFile, setPdfFile] = useState(null)
-  const [pdfUrl,  setPdfUrl]  = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['tr-admin'], queryFn:()=>api.get('/tramites?all=1').then(r=>r.data) })
-  const list = data?.data||[]
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const [pdfFile,   setPdfFile]   = useState(null)
+  const [pdfUrl,    setPdfUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['tr-admin'], queryFn: () => api.get('/tramites?all=1').then(r => r.data) })
+  const list = data?.data || []
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
 
   const openEdit = t => {
-    setEditing(t); setPdfFile(null); setPdfUrl(t.archivo_url||'')
-    reset({ nombre:t.nombre||'', descripcion:t.descripcion||'', contacto:t.contacto||'' })
+    setEditing(t); setPdfFile(null); setPdfUrl(t.archivo_url || '')
+    reset({ nombre: t.nombre || '', descripcion: t.descripcion || '', contacto: t.contacto || '' })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setPdfFile(null); setPdfUrl('')
-    reset({ nombre:'', descripcion:'', contacto:'' })
+    reset({ nombre: '', descripcion: '', contacto: '' })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (pdfFile instanceof File) fd.append('archivo', pdfFile)
       else if (pdfUrl?.trim())     fd.append('archivo_url', pdfUrl.trim())
-      return editing ? api.put(`/tramites/${editing.id}`,fd,MULTIPART) : api.post('/tramites',fd,MULTIPART)
+      return editing ? api.put(`/tramites/${editing.id}`, fd, MULTIPART) : api.post('/tramites', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['tr-admin']); toast.success('Guardado'); setModal(false) }
+    onSuccess: () => { qc.invalidateQueries(['tr-admin']); toast.success('Guardado'); setModal(false) },
   })
-  const del = useMutation({ mutationFn: id => api.delete(`/tramites/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['tr-admin']); toast.success('Desactivado') }})
+  const del = useMutation({
+    mutationFn: id => api.delete(`/tramites/${id}`),
+    onSuccess: () => { qc.invalidateQueries(['tr-admin']); toast.success('Desactivado') },
+  })
 
   return (
     <div>
@@ -851,7 +897,7 @@ export function AdminTramitesPage() {
       </SectionHeader>
       {isLoading ? <LoadingCenter/> : (
         <div className="space-y-3">
-          {list.length===0 && <EmptyState title="Sin trámites"/>}
+          {list.length === 0 && <EmptyState title="Sin trámites"/>}
           {list.map(t => (
             <div key={t.id} className="card p-4 flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -868,10 +914,10 @@ export function AdminTramitesPage() {
           ))}
         </div>
       )}
-      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Desactivar trámite" message="¿Desactivar este trámite?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar trámite':'Nuevo trámite'} size="lg">
+      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Desactivar" message="¿Desactivar este trámite?"/>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar trámite' : 'Nuevo trámite'} size="lg">
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre del trámite *</label><input className="input" {...register('nombre',{required:true})}/></div>
+          <div><label className="label">Nombre del trámite *</label><input className="input" {...register('nombre', { required: true })}/></div>
           <div><label className="label">Descripción y requisitos</label><textarea className="input h-24 resize-none" {...register('descripcion')}/></div>
           <div><label className="label">Contacto responsable</label><input className="input" {...register('contacto')}/></div>
           <FileField label="Formulario PDF / Enlace" currentUrl={pdfUrl}
@@ -886,65 +932,63 @@ export function AdminTramitesPage() {
 }
 
 // ============================================================
-// GALERÍA — CRUD corregido
+// GALERÍA
 // ============================================================
 export function AdminGaleriaPage() {
   const qc = useQueryClient()
-  const [albumModal, setAlbumModal]     = useState(false)
-  const [editingAlbum, setEditingAlbum] = useState(null)
-  const [selAlbum, setSelAlbum]         = useState(null)
-  const [confirmAlbum, setConfirmAlbum] = useState(null)
-  const [confirmImg, setConfirmImg]     = useState(null)
-  const [uploading, setUploading]       = useState(false)
-  const [portadaFile, setPortadaFile]   = useState(null)
-  const [portadaUrl,  setPortadaUrl]    = useState('')
-  const [showUrlBox, setShowUrlBox]     = useState(false)
-  const [newImgUrl, setNewImgUrl]       = useState('')
-  const [newImgTitulo, setNewImgTitulo] = useState('')
+  const [albumModal,    setAlbumModal]    = useState(false)
+  const [editingAlbum,  setEditingAlbum]  = useState(null)
+  const [selAlbum,      setSelAlbum]      = useState(null)
+  const [confirmAlbum,  setConfirmAlbum]  = useState(null)
+  const [confirmImg,    setConfirmImg]    = useState(null)
+  const [uploading,     setUploading]     = useState(false)
+  const [portadaFile,   setPortadaFile]   = useState(null)
+  const [portadaUrl,    setPortadaUrl]    = useState('')
+  const [showUrlBox,    setShowUrlBox]    = useState(false)
+  const [newImgUrl,     setNewImgUrl]     = useState('')
+  const [newImgTitulo,  setNewImgTitulo]  = useState('')
   const { register: rA, handleSubmit: hA, reset: resetA } = useForm()
 
-  const { data: albData } = useQuery({ queryKey:['alb-admin'], queryFn:()=>api.get('/galeria/albumes?all=1').then(r=>r.data) })
-  const albumes    = albData?.data||[]
+  const { data: albData } = useQuery({ queryKey: ['alb-admin'], queryFn: () => api.get('/galeria/albumes?all=1').then(r => r.data) })
+  const albumes     = albData?.data || []
   const albumActual = albumes.find(a => a.id === selAlbum?.id)
 
   const { data: imgData, isLoading: imgsLoad, refetch: refImg } = useQuery({
     queryKey: ['imgs-admin', selAlbum?.id], enabled: !!selAlbum,
-    queryFn: () => api.get(`/galeria/albumes/${selAlbum.id}/imagenes?all=1`).then(r=>r.data)
+    queryFn: () => api.get(`/galeria/albumes/${selAlbum.id}/imagenes?all=1`).then(r => r.data),
   })
-  const imagenes = imgData?.data||[]
+  const imagenes = imgData?.data || []
 
-  const openNewAlbum  = () => { setEditingAlbum(null); setPortadaFile(null); setPortadaUrl(''); resetA({nombre:'',descripcion:'',publicado:true}); setAlbumModal(true) }
-  const openEditAlbum = a  => { setEditingAlbum(a); setPortadaFile(null); setPortadaUrl(a.portada_url||''); resetA({nombre:a.nombre,descripcion:a.descripcion||'',publicado:parseBool(a.publicado)}); setAlbumModal(true) }
+  const openNewAlbum  = () => { setEditingAlbum(null); setPortadaFile(null); setPortadaUrl(''); resetA({ nombre: '', descripcion: '', publicado: true }); setAlbumModal(true) }
+  const openEditAlbum = a  => { setEditingAlbum(a); setPortadaFile(null); setPortadaUrl(a.portada_url || ''); resetA({ nombre: a.nombre, descripcion: a.descripcion || '', publicado: parseBool(a.publicado) }); setAlbumModal(true) }
 
   const albMut = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (portadaFile instanceof File) fd.append('portada', portadaFile)
       else if (portadaUrl?.trim())     fd.append('portada_url', portadaUrl.trim())
-      return editingAlbum ? api.put(`/galeria/albumes/${editingAlbum.id}`,fd,MULTIPART) : api.post('/galeria/albumes',fd,MULTIPART)
+      return editingAlbum ? api.put(`/galeria/albumes/${editingAlbum.id}`, fd, MULTIPART) : api.post('/galeria/albumes', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['alb-admin']); setAlbumModal(false); setEditingAlbum(null); setPortadaFile(null); setPortadaUrl(''); toast.success(editingAlbum?'Álbum actualizado':'Álbum creado') }
+    onSuccess: () => { qc.invalidateQueries(['alb-admin']); setAlbumModal(false); setPortadaFile(null); setPortadaUrl(''); toast.success(editingAlbum ? 'Álbum actualizado' : 'Álbum creado') },
   })
-  const delAlbum = useMutation({ mutationFn: id=>api.delete(`/galeria/albumes/${id}`),
-    onSuccess: () => { qc.invalidateQueries(['alb-admin']); setSelAlbum(null); toast.success('Álbum eliminado') }})
-  const delImg   = useMutation({ mutationFn: galeriaService.eliminar,
-    onSuccess: () => { refImg(); toast.success('Imagen eliminada') }})
+  const delAlbum = useMutation({ mutationFn: id => api.delete(`/galeria/albumes/${id}`), onSuccess: () => { qc.invalidateQueries(['alb-admin']); setSelAlbum(null); toast.success('Álbum eliminado') } })
+  const delImg   = useMutation({ mutationFn: galeriaService.eliminar, onSuccess: () => { refImg(); toast.success('Imagen eliminada') } })
 
   const uploadFiles = async e => {
-    const files = Array.from(e.target.files); if(!files.length) return
-    setUploading(true); let ok=0
+    const files = Array.from(e.target.files); if (!files.length) return
+    setUploading(true); let ok = 0
     for (const f of files) {
-      try { const fd=new FormData(); fd.append('imagen',f); fd.append('album_id',selAlbum.id); await galeriaService.subirImagen(fd); ok++ }
+      try { const fd = new FormData(); fd.append('imagen', f); fd.append('album_id', selAlbum.id); await galeriaService.subirImagen(fd); ok++ }
       catch { toast.error(`Error: ${f.name}`) }
     }
-    refImg(); setUploading(false); if(ok) toast.success(`${ok} imagen(es) agregada(s)`)
+    refImg(); setUploading(false); if (ok) toast.success(`${ok} imagen(es) agregada(s)`)
   }
   const addUrl = async () => {
     if (!newImgUrl.trim()) return toast.error('Escribe una URL válida')
     try {
-      const fd=new FormData(); fd.append('imagen_url',newImgUrl.trim()); fd.append('album_id',selAlbum.id)
-      if(newImgTitulo) fd.append('titulo',newImgTitulo)
+      const fd = new FormData(); fd.append('imagen_url', newImgUrl.trim()); fd.append('album_id', selAlbum.id)
+      if (newImgTitulo) fd.append('titulo', newImgTitulo)
       await galeriaService.subirImagen(fd); refImg(); setNewImgUrl(''); setNewImgTitulo(''); setShowUrlBox(false); toast.success('Imagen agregada')
     } catch { toast.error('Error al agregar imagen') }
   }
@@ -956,16 +1000,18 @@ export function AdminGaleriaPage() {
       </SectionHeader>
       {!selAlbum ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {albumes.length===0 && <div className="col-span-full"><EmptyState title="Sin álbumes" subtitle="Crea el primer álbum"/></div>}
+          {albumes.length === 0 && <div className="col-span-full"><EmptyState title="Sin álbumes" subtitle="Crea el primer álbum fotográfico"/></div>}
           {albumes.map(a => (
             <div key={a.id} className="card overflow-hidden group">
               <div className="h-44 bg-gray-100 overflow-hidden cursor-pointer" onClick={() => setSelAlbum(a)}>
-                {a.portada_url ? <img src={a.portada_url} alt={a.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e=>e.target.style.display='none'}/> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">Sin portada</div>}
+                {a.portada_url
+                  ? <img src={a.portada_url} alt={a.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => e.target.style.display = 'none'}/>
+                  : <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">Sin portada</div>}
               </div>
               <div className="p-3">
                 <p className="font-semibold text-sm">{a.nombre}</p>
                 {a.descripcion && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{a.descripcion}</p>}
-                <p className="text-xs text-gray-400 mt-1">{a.total_imagenes||0} imágenes · {parseBool(a.publicado)?'Publicado':'Borrador'}</p>
+                <p className="text-xs text-gray-400 mt-1">{a.total_imagenes || 0} imágenes · {parseBool(a.publicado) ? 'Publicado' : 'Borrador'}</p>
                 <div className="flex items-center justify-between mt-2">
                   <button onClick={() => setSelAlbum(a)} className="text-secondary text-xs hover:underline">Ver imágenes →</button>
                   <div className="flex gap-1">
@@ -986,30 +1032,30 @@ export function AdminGaleriaPage() {
               <div><p className="font-semibold text-sm">{albumActual?.nombre}</p>{albumActual?.descripcion && <p className="text-xs text-gray-400">{albumActual.descripcion}</p>}</div>
             </div>
             <div className="flex gap-2">
-              <label className={`btn btn-secondary btn-sm cursor-pointer ${uploading?'opacity-50':''}`}>
-                <Upload size={13}/> {uploading?'Subiendo...':'Subir fotos'}
+              <label className={`btn btn-secondary btn-sm cursor-pointer ${uploading ? 'opacity-50' : ''}`}>
+                <Upload size={13}/> {uploading ? 'Subiendo...' : 'Subir fotos'}
                 <input type="file" multiple accept="image/*" className="hidden" onChange={uploadFiles} disabled={uploading}/>
               </label>
               <button onClick={() => setShowUrlBox(!showUrlBox)} className="btn btn-ghost btn-sm border border-dashed border-gray-300">
-                <Link2 size={13}/> Pegar URL
+                <Link2 size={13}/> Pegar URL / Drive
               </button>
             </div>
           </div>
           {showUrlBox && (
             <div className="card p-3 mb-4 flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-              <input className="input flex-1" type="url" placeholder="https://..." value={newImgUrl} onChange={e=>setNewImgUrl(e.target.value)}/>
-              <input className="input sm:w-44" placeholder="Título (opcional)" value={newImgTitulo} onChange={e=>setNewImgTitulo(e.target.value)}/>
+              <input className="input flex-1" type="url" placeholder="https://... o link de Google Drive" value={newImgUrl} onChange={e => setNewImgUrl(e.target.value)}/>
+              <input className="input sm:w-44" placeholder="Título (opcional)" value={newImgTitulo} onChange={e => setNewImgTitulo(e.target.value)}/>
               <button onClick={addUrl} className="btn btn-primary btn-sm flex-shrink-0">Agregar</button>
               <button onClick={() => setShowUrlBox(false)} className="btn btn-ghost btn-sm flex-shrink-0"><X size={14}/></button>
             </div>
           )}
-          {imgsLoad ? <LoadingCenter/> : imagenes.length===0 ? (
-            <div className="text-center py-12"><p className="text-gray-400 text-sm">Sin imágenes — sube fotos o agrega URLs</p></div>
+          {imgsLoad ? <LoadingCenter/> : imagenes.length === 0 ? (
+            <div className="text-center py-12"><p className="text-gray-400 text-sm">Sin imágenes — sube fotos o agrega URLs / links de Drive</p></div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {imagenes.map(img => (
                 <div key={img.id} className="relative group rounded-xl overflow-hidden bg-gray-100 aspect-square">
-                  <img src={img.thumbnail_url||img.url} alt={img.titulo||''} className="w-full h-full object-cover group-hover:scale-105 transition-transform" onError={e=>e.target.style.display='none'}/>
+                  <img src={img.thumbnail_url || img.url} alt={img.titulo || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform" onError={e => e.target.style.display = 'none'}/>
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button onClick={() => setConfirmImg(img.id)} className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white"><Trash2 size={13}/></button>
                   </div>
@@ -1022,11 +1068,13 @@ export function AdminGaleriaPage() {
       )}
       <ConfirmDialog open={!!confirmAlbum} onClose={() => setConfirmAlbum(null)} onConfirm={() => { delAlbum.mutate(confirmAlbum); setConfirmAlbum(null) }} title="Eliminar álbum" message="¿Eliminar este álbum y todas sus imágenes?"/>
       <ConfirmDialog open={!!confirmImg}   onClose={() => setConfirmImg(null)}   onConfirm={() => { delImg.mutate(confirmImg);   setConfirmImg(null) }}   title="Eliminar imagen" message="¿Eliminar esta imagen?"/>
-      <Modal open={albumModal} onClose={() => setAlbumModal(false)} title={editingAlbum?'Editar álbum':'Nuevo álbum'}>
+      <Modal open={albumModal} onClose={() => setAlbumModal(false)} title={editingAlbum ? 'Editar álbum' : 'Nuevo álbum'}>
         <form onSubmit={hA(d => albMut.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre del álbum *</label><input className="input" {...rA('nombre',{required:true})}/></div>
+          <div><label className="label">Nombre del álbum *</label><input className="input" {...rA('nombre', { required: true })}/></div>
           <div><label className="label">Descripción</label><textarea className="input h-20 resize-none" {...rA('descripcion')}/></div>
-          <ImageField label="Imagen de portada" currentUrl={portadaUrl} onFile={f=>{setPortadaFile(f);setPortadaUrl('')}} onUrl={u=>{setPortadaUrl(u);setPortadaFile(null)}}/>
+          <ImageField label="Imagen de portada (archivo o Drive)" currentUrl={portadaUrl}
+            onFile={f => { setPortadaFile(f); setPortadaUrl('') }}
+            onUrl={u  => { setPortadaUrl(u);  setPortadaFile(null) }}/>
           <div className="flex items-center gap-2"><input type="checkbox" id="pub_alb" {...rA('publicado')}/><label htmlFor="pub_alb" className="text-sm">Publicar álbum</label></div>
           <button type="submit" className="btn btn-primary w-full">Guardar álbum</button>
         </form>
@@ -1040,18 +1088,18 @@ export function AdminGaleriaPage() {
 // ============================================================
 export function AdminMallaPage() {
   const qc = useQueryClient()
-  const [editing, setEditing]   = useState(null)
-  const [newModal, setNewModal] = useState(false)
+  const [editing,   setEditing]   = useState(null)
+  const [newModal,  setNewModal]  = useState(false)
   const [confirmId, setConfirmId] = useState(null)
-  const { data, isLoading } = useQuery({ queryKey:['mat-admin'], queryFn:()=>materiasService.getAll('2023') })
-  const materias = data?.data?.data||[]
-  const bySem = {}; for(let i=1;i<=10;i++) bySem[i]=materias.filter(m=>m.semestre===i)
-  const { register:rE, handleSubmit:hE, reset:resetE } = useForm()
-  const { register:rN, handleSubmit:hN, reset:resetN } = useForm()
-  useEffect(() => { if(editing) resetE({nombre:editing.nombre,creditos:editing.creditos||'',area:editing.area||'',tipo:editing.tipo||'obligatoria'}) },[editing,resetE])
-  const editMut = useMutation({ mutationFn:({id,...d})=>materiasService.update(id,d), onSuccess:()=>{ qc.invalidateQueries(['mat-admin']); toast.success('Actualizada'); setEditing(null) }})
-  const newMut  = useMutation({ mutationFn:d=>api.post('/materias',d), onSuccess:()=>{ qc.invalidateQueries(['mat-admin']); toast.success('Creada'); setNewModal(false); resetN() }})
-  const delMut  = useMutation({ mutationFn:id=>api.delete(`/materias/${id}`), onSuccess:()=>{ qc.invalidateQueries(['mat-admin']); toast.success('Desactivada') }})
+  const { data, isLoading } = useQuery({ queryKey: ['mat-admin'], queryFn: () => materiasService.getAll('2023') })
+  const materias = data?.data?.data || []
+  const bySem = {}; for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
+  const { register: rE, handleSubmit: hE, reset: resetE } = useForm()
+  const { register: rN, handleSubmit: hN, reset: resetN } = useForm()
+  useEffect(() => { if (editing) resetE({ nombre: editing.nombre, creditos: editing.creditos || '', area: editing.area || '', tipo: editing.tipo || 'obligatoria' }) }, [editing, resetE])
+  const editMut = useMutation({ mutationFn: ({ id, ...d }) => materiasService.update(id, d), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Actualizada'); setEditing(null) } })
+  const newMut  = useMutation({ mutationFn: d => api.post('/materias', d), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Creada'); setNewModal(false); resetN() } })
+  const delMut  = useMutation({ mutationFn: id => api.delete(`/materias/${id}`), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Desactivada') } })
 
   return (
     <div>
@@ -1061,18 +1109,18 @@ export function AdminMallaPage() {
       {isLoading ? <LoadingCenter/> : (
         <div className="overflow-x-auto pb-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 min-w-[640px]">
-            {Object.entries(bySem).map(([sem,ms]) => (
+            {Object.entries(bySem).map(([sem, ms]) => (
               <div key={sem}>
                 <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Semestre {sem}</div>
                 <div className="space-y-1.5">
-                  {ms.length===0 ? <div className="card p-3 text-center text-xs text-gray-300">—</div>
+                  {ms.length === 0 ? <div className="card p-3 text-center text-xs text-gray-300">—</div>
                     : ms.map(m => (
                       <div key={m.id} className="card p-2.5 group hover:border-primary transition-colors cursor-pointer" onClick={() => setEditing(m)}>
                         <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
                         {m.creditos && <p className="text-xs text-gray-400 mt-0.5">{m.creditos} cred.</p>}
                         <div className="flex gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <span className="text-secondary text-xs">Editar</span>
-                          <button onClick={e=>{e.stopPropagation();setConfirmId(m.id)}} className="text-red-400 text-xs ml-auto">Quitar</button>
+                          <button onClick={e => { e.stopPropagation(); setConfirmId(m.id) }} className="text-red-400 text-xs ml-auto">Quitar</button>
                         </div>
                       </div>
                     ))
@@ -1086,7 +1134,7 @@ export function AdminMallaPage() {
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { delMut.mutate(confirmId); setConfirmId(null) }} title="Desactivar materia" message="¿Quitar esta materia?"/>
       {editing && (
         <Modal open={!!editing} onClose={() => setEditing(null)} title={`Editar: ${editing.nombre}`}>
-          <form onSubmit={hE(d => editMut.mutate({id:editing.id,...d}))} className="space-y-3">
+          <form onSubmit={hE(d => editMut.mutate({ id: editing.id, ...d }))} className="space-y-3">
             <div><label className="label">Nombre</label><input className="input" {...rE('nombre')}/></div>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="label">Créditos</label><input className="input" type="number" {...rE('creditos')}/></div>
@@ -1099,9 +1147,9 @@ export function AdminMallaPage() {
       )}
       <Modal open={newModal} onClose={() => setNewModal(false)} title="Nueva materia">
         <form onSubmit={hN(d => newMut.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre *</label><input className="input" {...rN('nombre',{required:true})}/></div>
+          <div><label className="label">Nombre *</label><input className="input" {...rN('nombre', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre',{required:true})}/></div>
+            <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })}/></div>
             <div><label className="label">Créditos</label><input className="input" type="number" {...rN('creditos')}/></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -1123,48 +1171,50 @@ export function AdminInstitucionalPage() {
   const [editing, setEditing] = useState(null)
   const [imgFile, setImgFile] = useState(null)
   const [imgUrl,  setImgUrl]  = useState('')
-  const claves = ['mision','vision','historia','pensum_info']
-  const queries = claves.map(c => useQuery({ queryKey:['inst-adm',c], queryFn:()=>institucionalService.get(c) }))
-  const { register, handleSubmit, setValue, formState:{isSubmitting} } = useForm()
+  const claves  = ['mision', 'vision', 'historia', 'pensum_info']
+  const queries = claves.map(c => useQuery({ queryKey: ['inst-adm', c], queryFn: () => institucionalService.get(c) }))
+  const { register, handleSubmit, setValue, formState: { isSubmitting } } = useForm()
   const save = useMutation({
-    mutationFn: async ({clave,...d}) => {
+    mutationFn: async ({ clave, ...d }) => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (imgFile instanceof File) fd.append('imagen', imgFile)
       else if (imgUrl?.trim())     fd.append('imagen_url', imgUrl.trim())
       return api.put(`/institucional/${clave}`, fd, MULTIPART)
     },
-    onSuccess: () => { claves.forEach(c=>qc.invalidateQueries(['inst-adm',c])); toast.success('Actualizado'); setEditing(null); setImgFile(null); setImgUrl('') }
+    onSuccess: () => { claves.forEach(c => qc.invalidateQueries(['inst-adm', c])); toast.success('Actualizado'); setEditing(null); setImgFile(null); setImgUrl('') },
   })
-  const openEdit = (item,clave) => {
-    setEditing({...item,clave}); setImgFile(null); setImgUrl(item.imagen_url||'')
-    setValue('titulo',item.titulo||''); setValue('contenido',item.contenido||'')
+  const openEdit = (item, clave) => {
+    setEditing({ ...item, clave }); setImgFile(null); setImgUrl(item.imagen_url || '')
+    setValue('titulo', item.titulo || ''); setValue('contenido', item.contenido || '')
   }
 
   return (
     <div>
       <SectionHeader title="Contenido institucional" subtitle="Misión, visión, historia, pensum"/>
       <div className="grid sm:grid-cols-2 gap-4">
-        {queries.map((q,i) => {
+        {queries.map((q, i) => {
           const item = q.data?.data?.data
           return item ? (
             <div key={claves[i]} className="card p-5">
-              {item.imagen_url && <img src={item.imagen_url} alt="" className="w-full h-32 object-cover rounded-xl mb-3" onError={e=>e.target.style.display='none'}/>}
-              <h3 className="font-bold text-secondary mb-2">{item.titulo||claves[i]}</h3>
+              {item.imagen_url && <img src={item.imagen_url} alt="" className="w-full h-32 object-cover rounded-xl mb-3" onError={e => e.target.style.display = 'none'}/>}
+              <h3 className="font-bold text-secondary mb-2">{item.titulo || claves[i]}</h3>
               <p className="text-sm text-gray-600 line-clamp-3">{item.contenido}</p>
               <div className="flex items-center justify-between mt-3">
                 <p className="text-xs text-gray-400">Actualizado: {formatDate(item.actualizado_en)}</p>
-                <button onClick={() => openEdit(item,claves[i])} className="btn btn-outline btn-sm"><Pencil size={12}/> Editar</button>
+                <button onClick={() => openEdit(item, claves[i])} className="btn btn-outline btn-sm"><Pencil size={12}/> Editar</button>
               </div>
             </div>
           ) : <div key={claves[i]} className="card p-4 h-32 animate-pulse bg-gray-50"/>
         })}
       </div>
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Editar: ${editing?.titulo||editing?.clave}`} size="lg">
-        <form onSubmit={handleSubmit(d => save.mutate({...d,clave:editing.clave}))} className="space-y-3">
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Editar: ${editing?.titulo || editing?.clave}`} size="lg">
+        <form onSubmit={handleSubmit(d => save.mutate({ ...d, clave: editing.clave }))} className="space-y-3">
           <div><label className="label">Título de la sección</label><input className="input" {...register('titulo')}/></div>
-          <div><label className="label">Contenido *</label><textarea className="input h-48 resize-y" {...register('contenido',{required:true})}/></div>
-          <ImageField label="Imagen ilustrativa (opcional)" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/>
+          <div><label className="label">Contenido *</label><textarea className="input h-48 resize-y" {...register('contenido', { required: true })}/></div>
+          <ImageField label="Imagen ilustrativa (opcional)" currentUrl={imgUrl}
+            onFile={f => { setImgFile(f); setImgUrl('') }}
+            onUrl={u  => { setImgUrl(u);  setImgFile(null) }}/>
           <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar cambios</button>
         </form>
       </Modal>
@@ -1173,49 +1223,46 @@ export function AdminInstitucionalPage() {
 }
 
 // ============================================================
-// EVENTOS — con GPS y estado completado
+// EVENTOS
 // ============================================================
 export function AdminEventosPage() {
   const qc = useQueryClient()
-  const [modal, setModal]       = useState(false)
-  const [editing, setEditing]   = useState(null)
-  const [selected, setSelected] = useState(null)
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
+  const [selected,  setSelected]  = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const [imgFile, setImgFile]   = useState(null)
-  const [imgUrl,  setImgUrl]    = useState('')
-  const { data, isLoading } = useQuery({ queryKey:['ev-admin'], queryFn:()=>eventosService.getAll({}) })
-  const list = data?.data?.data||[]
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
+  const [imgFile,   setImgFile]   = useState(null)
+  const [imgUrl,    setImgUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['ev-admin'], queryFn: () => eventosService.getAll({}) })
+  const list = data?.data?.data || []
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
+  const hoy = new Date()
 
   const openEdit = e => {
-    setEditing(e); setImgFile(null); setImgUrl(e.imagen_url||'')
-    reset({ titulo:e.titulo||'', tipo:e.tipo||'otro', color:e.color||'#C0392B', fecha_inicio:e.fecha_inicio?.slice(0,16)||'', fecha_fin:e.fecha_fin?.slice(0,16)||'', lugar:e.lugar||'', enlace_virtual:e.enlace_virtual||'', descripcion:e.descripcion||'', publicado:parseBool(e.publicado), latitud:e.latitud||'', longitud:e.longitud||'' })
+    setEditing(e); setImgFile(null); setImgUrl(e.imagen_url || '')
+    reset({ titulo: e.titulo || '', tipo: e.tipo || 'otro', color: e.color || '#C0392B', fecha_inicio: e.fecha_inicio?.slice(0, 16) || '', fecha_fin: e.fecha_fin?.slice(0, 16) || '', lugar: e.lugar || '', enlace_virtual: e.enlace_virtual || '', descripcion: e.descripcion || '', publicado: parseBool(e.publicado), latitud: e.latitud || '', longitud: e.longitud || '' })
     setModal(true)
   }
   const openNew = () => {
     setEditing(null); setImgFile(null); setImgUrl('')
-    reset({ titulo:'', tipo:'otro', color:'#C0392B', fecha_inicio:'', fecha_fin:'', lugar:'', enlace_virtual:'', descripcion:'', publicado:true, latitud:'', longitud:'' })
+    reset({ titulo: '', tipo: 'otro', color: '#C0392B', fecha_inicio: '', fecha_fin: '', lugar: '', enlace_virtual: '', descripcion: '', publicado: true, latitud: '', longitud: '' })
     setModal(true)
   }
 
   const save = useMutation({
     mutationFn: async d => {
       const fd = new FormData()
-      Object.entries(d).forEach(([k,v]) => { if(v!==undefined&&String(v)!=='') fd.append(k,String(v)) })
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (imgFile instanceof File) fd.append('imagen', imgFile)
       else if (imgUrl?.trim())     fd.append('imagen_url', imgUrl.trim())
-      return editing ? api.put(`/eventos/${editing.id}`,fd,MULTIPART) : api.post('/eventos',fd,MULTIPART)
+      return editing ? api.put(`/eventos/${editing.id}`, fd, MULTIPART) : api.post('/eventos', fd, MULTIPART)
     },
-    onSuccess: () => { qc.invalidateQueries(['ev-admin']); toast.success('Guardado'); setModal(false) }
+    onSuccess: () => { qc.invalidateQueries(['ev-admin']); toast.success('Guardado'); setModal(false) },
   })
-  const del = useMutation({ mutationFn: eventosService.delete,
-    onSuccess: () => { qc.invalidateQueries(['ev-admin']); toast.success('Eliminado'); setSelected(null); setConfirmId(null) }})
-
-  const hoy = new Date()
-  const eventosConEstado = list.map(e => ({
-    ...e,
-    completado: new Date(e.fecha_inicio) < hoy
-  }))
+  const del = useMutation({
+    mutationFn: eventosService.delete,
+    onSuccess: () => { qc.invalidateQueries(['ev-admin']); toast.success('Eliminado'); setSelected(null); setConfirmId(null) },
+  })
 
   return (
     <div>
@@ -1223,63 +1270,53 @@ export function AdminEventosPage() {
         <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Nuevo evento</button>
       </SectionHeader>
       <div className="card p-4 mb-5">
-        <FullCalendar plugins={[dayGridPlugin,interactionPlugin]} initialView="dayGridMonth" locale="es" height="auto"
-          events={list.map(e=>({id:String(e.id),title:e.titulo,start:e.fecha_inicio,end:e.fecha_fin||undefined,color:new Date(e.fecha_inicio)<hoy?'#6b7280':e.color||'#C0392B',extendedProps:e}))}
-          eventClick={info=>setSelected(info.event.extendedProps)}
-          headerToolbar={{left:'prev,next today',center:'title',right:'dayGridMonth,dayGridWeek'}}
-          eventContent={arg=><div className="px-1.5 py-0.5 text-xs font-medium truncate rounded" style={{background:arg.event.backgroundColor,color:'white'}}>{arg.event.title}</div>}/>
-        <p className="text-xs text-gray-400 text-center mt-1">Eventos pasados aparecen en gris · Clic en un evento para ver detalle</p>
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin]} initialView="dayGridMonth" locale="es" height="auto"
+          events={list.map(e => ({ id: String(e.id), title: e.titulo, start: e.fecha_inicio, end: e.fecha_fin || undefined, color: new Date(e.fecha_inicio) < hoy ? '#6b7280' : e.color || '#C0392B', extendedProps: e }))}
+          eventClick={info => setSelected(info.event.extendedProps)}
+          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' }}
+          eventContent={arg => <div className="px-1.5 py-0.5 text-xs font-medium truncate rounded" style={{ background: arg.event.backgroundColor, color: 'white' }}>{arg.event.title}</div>}/>
+        <p className="text-xs text-gray-400 text-center mt-1">Pasados en gris · Clic en un evento para detalle</p>
       </div>
-
       {isLoading ? <LoadingCenter/> : (
         <div className="space-y-2">
-          {eventosConEstado.map(e => (
-            <div key={e.id} className={`card p-3 flex items-center gap-3 ${e.completado?'opacity-70':''}`}>
-              <div className="w-10 h-10 rounded-xl flex-shrink-0 flex flex-col items-center justify-center text-white text-xs font-bold"
-                style={{background:e.completado?'#6b7280':e.color||'#C0392B'}}>
-                <span className="text-base leading-none">{new Date(e.fecha_inicio).getDate()}</span>
-                <span className="text-xs opacity-80">{new Date(e.fecha_inicio).toLocaleDateString('es',{month:'short'})}</span>
-              </div>
-              {e.imagen_url && <img src={e.imagen_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" onError={ev=>ev.target.style.display='none'}/>}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-sm">{e.titulo}</p>
-                  {e.completado && <span className="badge bg-gray-100 text-gray-500 text-xs">✓ Completado</span>}
+          {list.map(e => {
+            const completado = new Date(e.fecha_inicio) < hoy
+            return (
+              <div key={e.id} className={`card p-3 flex items-center gap-3 ${completado ? 'opacity-70' : ''}`}>
+                <div className="w-10 h-10 rounded-xl flex-shrink-0 flex flex-col items-center justify-center text-white text-xs font-bold" style={{ background: completado ? '#6b7280' : e.color || '#C0392B' }}>
+                  <span className="text-base leading-none">{new Date(e.fecha_inicio).getDate()}</span>
+                  <span className="text-xs opacity-80">{new Date(e.fecha_inicio).toLocaleDateString('es', { month: 'short' })}</span>
                 </div>
-                {e.descripcion && <p className="text-xs text-gray-500 line-clamp-1">{e.descripcion}</p>}
-                <p className="text-xs text-gray-400">{formatDateTime(e.fecha_inicio)}{e.lugar?` · ${e.lugar}`:''}</p>
-                {(e.latitud && e.longitud) && (
-                  <a href={`https://maps.google.com/maps?q=${e.latitud},${e.longitud}`} target="_blank" rel="noreferrer"
-                    className="text-xs text-blue-500 hover:underline">📍 Ver en mapa</a>
-                )}
+                {e.imagen_url && <img src={e.imagen_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" onError={ev => ev.target.style.display = 'none'}/>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-sm">{e.titulo}</p>
+                    {completado && <span className="badge bg-gray-100 text-gray-500 text-xs">✓ Completado</span>}
+                  </div>
+                  <p className="text-xs text-gray-400">{formatDateTime(e.fecha_inicio)}{e.lugar ? ` · ${e.lugar}` : ''}</p>
+                </div>
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button onClick={() => openEdit(e)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
+                  <button onClick={() => setConfirmId(e.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                </div>
               </div>
-              <div className="flex gap-1.5 flex-shrink-0">
-                <button onClick={() => openEdit(e)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
-                <button onClick={() => setConfirmId(e.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
-
       {selected && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.titulo}>
-          {selected.imagen_url && <img src={selected.imagen_url} alt="" className="w-full h-40 object-cover rounded-xl mb-4" onError={e=>e.target.style.display='none'}/>}
+          {selected.imagen_url && <img src={selected.imagen_url} alt="" className="w-full h-40 object-cover rounded-xl mb-4" onError={e => e.target.style.display = 'none'}/>}
           <div className="space-y-3">
-            <div className="flex gap-2 flex-wrap">
-              <Badge color={selected.color||'#C0392B'}>{selected.tipo}</Badge>
-              {new Date(selected.fecha_inicio) < hoy && <span className="badge bg-gray-100 text-gray-500 text-xs">✓ Completado</span>}
-            </div>
+            <Badge color={selected.color || '#C0392B'}>{selected.tipo}</Badge>
             {selected.descripcion && <p className="text-sm text-gray-700">{selected.descripcion}</p>}
             <div className="grid grid-cols-2 gap-3 bg-gray-50 rounded-xl p-3 text-sm">
               <div><p className="text-xs text-gray-400">Inicio</p><p className="font-medium">{formatDateTime(selected.fecha_inicio)}</p></div>
               {selected.fecha_fin && <div><p className="text-xs text-gray-400">Fin</p><p className="font-medium">{formatDateTime(selected.fecha_fin)}</p></div>}
               {selected.lugar && <div className="col-span-2"><p className="text-xs text-gray-400">Lugar</p><p className="font-medium">{selected.lugar}</p></div>}
             </div>
-            {selected.latitud && selected.longitud && (
-              <a href={`https://maps.google.com/maps?q=${selected.latitud},${selected.longitud}`} target="_blank" rel="noreferrer"
-                className="btn btn-outline btn-sm w-full">📍 Ver ubicación en Google Maps</a>
-            )}
+            {selected.latitud && selected.longitud && <a href={`https://maps.google.com/maps?q=${selected.latitud},${selected.longitud}`} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm w-full">📍 Ver en Google Maps</a>}
             {selected.enlace_virtual && <a href={selected.enlace_virtual} target="_blank" rel="noreferrer" className="btn btn-primary w-full">Enlace virtual</a>}
             <div className="flex gap-2">
               <button onClick={() => { openEdit(selected); setSelected(null) }} className="btn btn-outline btn-sm"><Pencil size={13}/> Editar</button>
@@ -1289,21 +1326,24 @@ export function AdminEventosPage() {
         </Modal>
       )}
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => del.mutate(confirmId)} title="Eliminar evento" message="¿Eliminar este evento?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar evento':'Nuevo evento'} size="lg">
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar evento' : 'Nuevo evento'} size="lg">
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="grid sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2"><label className="label">Título *</label><input className="input" {...register('titulo',{required:true})}/></div>
-          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['taller','seminario','defensa','examen','fecha_admin','otro'].map(t=><option key={t} value={t}>{t}</option>)}</select></div>
+          <div className="sm:col-span-2"><label className="label">Título *</label><input className="input" {...register('titulo', { required: true })}/></div>
+          <div><label className="label">Tipo</label><select className="input" {...register('tipo')}>{['taller','seminario','defensa','examen','fecha_admin','otro'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
           <div><label className="label">Color</label><input className="input" type="color" {...register('color')}/></div>
-          <div><label className="label">Inicio *</label><input className="input" type="datetime-local" {...register('fecha_inicio',{required:true})}/></div>
+          <div><label className="label">Inicio *</label><input className="input" type="datetime-local" {...register('fecha_inicio', { required: true })}/></div>
           <div><label className="label">Fin</label><input className="input" type="datetime-local" {...register('fecha_fin')}/></div>
           <div><label className="label">Lugar</label><input className="input" {...register('lugar')}/></div>
           <div><label className="label">Enlace virtual</label><input className="input" type="url" {...register('enlace_virtual')}/></div>
-          <div><label className="label">Latitud GPS (si es presencial)</label><input className="input" type="number" step="0.0000001" placeholder="ej: -16.5050" {...register('latitud')}/></div>
-          <div><label className="label">Longitud GPS</label><input className="input" type="number" step="0.0000001" placeholder="ej: -68.1193" {...register('longitud')}/></div>
+          <div><label className="label">Latitud GPS</label><input className="input" type="number" step="0.0000001" placeholder="-16.5050" {...register('latitud')}/></div>
+          <div><label className="label">Longitud GPS</label><input className="input" type="number" step="0.0000001" placeholder="-68.1193" {...register('longitud')}/></div>
           <div className="sm:col-span-2"><label className="label">Descripción</label><textarea className="input h-20 resize-none" {...register('descripcion')}/></div>
-          <div className="sm:col-span-2"><ImageField label="Imagen del evento" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/></div>
+          <div className="sm:col-span-2">
+            <ImageField label="Imagen del evento (archivo o Drive)" currentUrl={imgUrl}
+              onFile={f => { setImgFile(f); setImgUrl('') }}
+              onUrl={u  => { setImgUrl(u);  setImgFile(null) }}/>
+          </div>
           <div className="sm:col-span-2 flex items-center gap-2"><input type="checkbox" id="pub_ev" {...register('publicado')}/><label htmlFor="pub_ev" className="text-sm">Publicar en calendario público</label></div>
-          <div className="sm:col-span-2 bg-blue-50 rounded-xl p-3 text-xs text-secondary">💡 Para obtener coordenadas GPS: abre Google Maps, haz clic derecho en el lugar → "¿Qué hay aquí?" → copia las coordenadas.</div>
           <div className="sm:col-span-2"><button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar evento</button></div>
         </form>
       </Modal>
@@ -1316,20 +1356,18 @@ export function AdminEventosPage() {
 // ============================================================
 export function AdminWhatsappPage() {
   const qc = useQueryClient()
-  const [filtro, setFiltro]   = useState('todos')
-  const [modal, setModal]     = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [filtro,    setFiltro]    = useState('todos')
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
   const [confirmId, setConfirmId] = useState(null)
-  const { data, isLoading } = useQuery({ queryKey:['wa-admin'], queryFn:()=>api.get('/whatsapp/admin').then(r=>r.data) })
-  const all = data?.data||[]
-  const list = filtro==='publicado'?all.filter(g=>g.activo):filtro==='borrador'?all.filter(g=>!g.activo):all
-  const { register, handleSubmit, reset, formState:{isSubmitting} } = useForm()
-  const openEdit = g => { setEditing(g); reset({materia_nombre:g.materia_nombre||'',semestre:g.semestre||1,gestion:g.gestion||'',enlace_wa:g.enlace_wa||'',activo:g.activo}); setModal(true) }
-  const openNew  = () => { setEditing(null); reset({materia_nombre:'',semestre:1,gestion:'',enlace_wa:'',activo:true}); setModal(true) }
-  const save = useMutation({ mutationFn:d=>editing?api.put(`/whatsapp/${editing.id}`,d):api.post('/whatsapp',d),
-    onSuccess:()=>{ qc.invalidateQueries(['wa-admin']); toast.success('Guardado'); setModal(false) }})
-  const del  = useMutation({ mutationFn:whatsappService.delete,
-    onSuccess:()=>{ qc.invalidateQueries(['wa-admin']); toast.success('Desactivado') }})
+  const { data, isLoading } = useQuery({ queryKey: ['wa-admin'], queryFn: () => api.get('/whatsapp/admin').then(r => r.data) })
+  const all  = data?.data || []
+  const list = filtro === 'publicado' ? all.filter(g => g.activo) : filtro === 'borrador' ? all.filter(g => !g.activo) : all
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
+  const openEdit = g => { setEditing(g); reset({ materia_nombre: g.materia_nombre || '', semestre: g.semestre || 1, gestion: g.gestion || '', enlace_wa: g.enlace_wa || '', activo: g.activo }); setModal(true) }
+  const openNew  = () => { setEditing(null); reset({ materia_nombre: '', semestre: 1, gestion: '', enlace_wa: '', activo: true }); setModal(true) }
+  const save = useMutation({ mutationFn: d => editing ? api.put(`/whatsapp/${editing.id}`, d) : api.post('/whatsapp', d), onSuccess: () => { qc.invalidateQueries(['wa-admin']); toast.success('Guardado'); setModal(false) } })
+  const del  = useMutation({ mutationFn: whatsappService.delete, onSuccess: () => { qc.invalidateQueries(['wa-admin']); toast.success('Desactivado') } })
 
   return (
     <div>
@@ -1337,42 +1375,129 @@ export function AdminWhatsappPage() {
         <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Agregar grupo</button>
       </SectionHeader>
       <div className="flex items-center gap-3 mb-4 flex-wrap">
-        {[['todos','Todos'],['publicado','Activos'],['borrador','Inactivos']].map(([v,l])=>(
-          <button key={v} onClick={()=>setFiltro(v)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${filtro===v?'bg-secondary text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{l}</button>
+        {[['todos','Todos'],['publicado','Activos'],['borrador','Inactivos']].map(([v, l]) => (
+          <button key={v} onClick={() => setFiltro(v)} className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${filtro === v ? 'bg-secondary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{l}</button>
         ))}
         <span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span>
       </div>
       {isLoading ? <LoadingCenter/> : (
-        <div className="card overflow-hidden"><table className="table-pro w-full">
-          <thead><tr><th>Materia</th><th>Sem.</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
-          <tbody>
-            {list.length===0 && <tr><td colSpan={5} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
-            {list.map(g=>(
-              <tr key={g.id}>
-                <td className="font-medium text-sm">{g.materia_nombre}</td>
-                <td className="text-gray-500 text-sm">{g.semestre}</td>
-                <td className="hidden sm:table-cell text-gray-500 text-sm">{g.gestion}</td>
-                <td><span className={`badge text-xs font-semibold ${g.activo?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>{g.activo?'● Activo':'○ Inactivo'}</span></td>
-                <td className="text-right pr-4"><div className="flex gap-2 justify-end">
-                  <button onClick={() => openEdit(g)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
-                  <button onClick={() => setConfirmId(g.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-                </div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
+        <div className="card overflow-hidden">
+          <table className="table-pro w-full">
+            <thead><tr><th>Materia</th><th>Sem.</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <tbody>
+              {list.length === 0 && <tr><td colSpan={5} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
+              {list.map(g => (
+                <tr key={g.id}>
+                  <td className="font-medium text-sm">{g.materia_nombre}</td>
+                  <td className="text-gray-500 text-sm">{g.semestre}</td>
+                  <td className="hidden sm:table-cell text-gray-500 text-sm">{g.gestion}</td>
+                  <td><span className={`badge text-xs font-semibold ${g.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{g.activo ? '● Activo' : '○ Inactivo'}</span></td>
+                  <td className="text-right pr-4"><div className="flex gap-2 justify-end">
+                    <button onClick={() => openEdit(g)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
+                    <button onClick={() => setConfirmId(g.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Desactivar" message="¿Desactivar este grupo?"/>
-      <Modal open={modal} onClose={() => setModal(false)} title={editing?'Editar grupo':'Nuevo grupo'}>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar grupo' : 'Nuevo grupo'}>
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
-          <div><label className="label">Materia *</label><input className="input" {...register('materia_nombre',{required:true})}/></div>
+          <div><label className="label">Materia *</label><input className="input" {...register('materia_nombre', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre *</label><input className="input" type="number" min="1" max="10" {...register('semestre',{required:true})}/></div>
-            <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion',{required:true})}/></div>
+            <div><label className="label">Semestre *</label><input className="input" type="number" min="1" max="10" {...register('semestre', { required: true })}/></div>
+            <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion', { required: true })}/></div>
           </div>
-          <div><label className="label">Enlace WhatsApp *</label><input className="input" type="url" placeholder="https://chat.whatsapp.com/..." {...register('enlace_wa',{required:true})}/></div>
+          <div><label className="label">Enlace WhatsApp *</label><input className="input" type="url" placeholder="https://chat.whatsapp.com/..." {...register('enlace_wa', { required: true })}/></div>
           {editing && <div className="flex items-center gap-2"><input type="checkbox" id="act_wa" {...register('activo')}/><label htmlFor="act_wa" className="text-sm">Enlace activo</label></div>}
           <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button>
+        </form>
+      </Modal>
+    </div>
+  )
+}
+
+// ============================================================
+// EGRESADOS
+// ============================================================
+export function AdminEgresadosPage() {
+  const qc = useQueryClient()
+  const [filtro,    setFiltro]    = useState('todos')
+  const [modal,     setModal]     = useState(false)
+  const [editing,   setEditing]   = useState(null)
+  const [confirmId, setConfirmId] = useState(null)
+  const [imgFile,   setImgFile]   = useState(null)
+  const [imgUrl,    setImgUrl]    = useState('')
+  const { data, isLoading } = useQuery({ queryKey: ['eg-admin'], queryFn: () => api.get('/egresados?all=1').then(r => r.data) })
+  const all  = data?.data || []; const list = filtrar(all, filtro)
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
+
+  const openEdit = e => {
+    setEditing(e); setImgFile(null); setImgUrl(e.foto_url || '')
+    reset({ nombre_completo: e.nombre_completo || '', anio_egreso: e.anio_egreso || '', ocupacion_actual: e.ocupacion_actual || '', empresa_institucion: e.empresa_institucion || '', testimonio: e.testimonio || '', linkedin_url: e.linkedin_url || '', publicado: parseBool(e.publicado) })
+    setModal(true)
+  }
+  const openNew = () => {
+    setEditing(null); setImgFile(null); setImgUrl('')
+    reset({ nombre_completo: '', anio_egreso: '', ocupacion_actual: '', empresa_institucion: '', testimonio: '', linkedin_url: '', publicado: false })
+    setModal(true)
+  }
+
+  const save = useMutation({
+    mutationFn: async d => {
+      const fd = new FormData()
+      Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
+      if (imgFile instanceof File) fd.append('foto', imgFile)
+      else if (imgUrl?.trim())     fd.append('foto_url', imgUrl.trim())
+      return editing ? api.put(`/egresados/${editing.id}`, fd, MULTIPART) : api.post('/egresados', fd, MULTIPART)
+    },
+    onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Guardado'); setModal(false) },
+  })
+  const pub = useMutation({ mutationFn: e => api.put(`/egresados/${e.id}`, { publicado: !parseBool(e.publicado) }), onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Estado actualizado') } })
+  const del = useMutation({ mutationFn: id => api.delete(`/egresados/${id}`), onSuccess: () => { qc.invalidateQueries(['eg-admin']); toast.success('Eliminado') } })
+
+  return (
+    <div>
+      <SectionHeader title="Egresados destacados" subtitle={`${all.length} perfiles`}>
+        <button onClick={openNew} className="btn btn-primary btn-sm"><Plus size={15}/> Agregar egresado</button>
+      </SectionHeader>
+      <div className="flex items-center gap-3 mb-4 flex-wrap"><FiltroEstado value={filtro} onChange={setFiltro}/><span className="text-xs text-gray-400 ml-auto">{list.length} resultados</span></div>
+      {isLoading ? <LoadingCenter/> : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {list.length === 0 && <div className="col-span-full"><EmptyState title="Sin egresados"/></div>}
+          {list.map(e => (
+            <div key={e.id} className="card p-4 flex gap-3">
+              <div className="w-12 h-12 rounded-xl overflow-hidden bg-secondary-50 flex-shrink-0 flex items-center justify-center">
+                {e.foto_url ? <img src={e.foto_url} alt="" className="w-full h-full object-cover" onError={ev => ev.target.style.display = 'none'}/> : <span className="text-secondary font-bold text-xl">{e.nombre_completo.charAt(0)}</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">{e.nombre_completo}</p>
+                {e.ocupacion_actual && <p className="text-xs text-primary">{e.ocupacion_actual}</p>}
+                {e.anio_egreso && <p className="text-xs text-gray-400">Egresado {e.anio_egreso}</p>}
+                <div className="mt-1"><EstadoBadge publicado={e.publicado} onClick={() => pub.mutate(e)}/></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => openEdit(e)} className="btn btn-ghost btn-sm p-1.5"><Pencil size={14}/></button>
+                <button onClick={() => setConfirmId(e.id)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { del.mutate(confirmId); setConfirmId(null) }} title="Eliminar egresado" message="¿Eliminar este perfil?"/>
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? 'Editar egresado' : 'Nuevo egresado'} size="lg">
+        <form onSubmit={handleSubmit(d => save.mutate(d))} className="grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2"><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo', { required: true })}/></div>
+          <div><label className="label">Año de egreso</label><input className="input" type="number" min="1984" max="2030" {...register('anio_egreso')}/></div>
+          <div><label className="label">Ocupación actual</label><input className="input" {...register('ocupacion_actual')}/></div>
+          <div className="sm:col-span-2"><label className="label">Empresa / Institución</label><input className="input" {...register('empresa_institucion')}/></div>
+          <div className="sm:col-span-2"><label className="label">Testimonio</label><textarea className="input h-20 resize-none" {...register('testimonio')}/></div>
+          <div><label className="label">LinkedIn URL</label><input className="input" type="url" {...register('linkedin_url')}/></div>
+          <div><ImageField label="Foto" currentUrl={imgUrl} onFile={f => { setImgFile(f); setImgUrl('') }} onUrl={u => { setImgUrl(u); setImgFile(null) }}/></div>
+          <div className="sm:col-span-2 flex items-center gap-2"><input type="checkbox" id="pub_eg" {...register('publicado')}/><label htmlFor="pub_eg" className="text-sm">Publicado</label></div>
+          <div className="sm:col-span-2"><button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button></div>
         </form>
       </Modal>
     </div>
@@ -1384,34 +1509,38 @@ export function AdminWhatsappPage() {
 // ============================================================
 export function AdminUsuariosPage() {
   const qc = useQueryClient()
-  const [createModal, setCreateModal] = useState(false)
-  const [passModal, setPassModal]     = useState(null)
-  const [confirmEliminar, setConfirmEliminar] = useState(null)
-  const [showPass, setShowPass] = useState(false)
-  const { data, isLoading } = useQuery({ queryKey:['usr-admin'], queryFn: usuariosService.getAll })
-  const list = data?.data?.data||[]
-  const { register:rC, handleSubmit:hC, reset:resetC } = useForm()
-  const { register:rP, handleSubmit:hP, reset:resetP } = useForm()
+  const [createModal,      setCreateModal]      = useState(false)
+  const [passModal,        setPassModal]        = useState(null)
+  const [confirmEliminar,  setConfirmEliminar]  = useState(null)
+  const [showPass,         setShowPass]         = useState(false)
+  const { data, isLoading } = useQuery({ queryKey: ['usr-admin'], queryFn: usuariosService.getAll })
+  const list = data?.data?.data || []
+  const { register: rC, handleSubmit: hC, reset: resetC } = useForm()
+  const { register: rP, handleSubmit: hP, reset: resetP } = useForm()
 
-  const createMut = useMutation({ mutationFn: usuariosService.create,
+  const createMut = useMutation({
+    mutationFn: usuariosService.create,
     onSuccess: res => {
       qc.invalidateQueries(['usr-admin'])
       const tmp = res.data?.data?.temp_password
-      if (tmp) toast.success(`✓ Usuario creado. Contraseña temporal: ${tmp}`, {duration:8000})
+      if (tmp) toast.success(`✓ Usuario creado. Contraseña temporal: ${tmp}`, { duration: 8000 })
       else toast.success('Usuario creado')
       setCreateModal(false); resetC()
     },
-    onError: e => toast.error(e.response?.data?.message||'Error')
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
   })
-  const toggleActivoMut = useMutation({ mutationFn:({id,activo})=>usuariosService.update(id,{activo}),
-    onSuccess:()=>{ qc.invalidateQueries(['usr-admin']); toast.success('Estado actualizado') }})
+  const toggleActivoMut = useMutation({
+    mutationFn: ({ id, activo }) => usuariosService.update(id, { activo }),
+    onSuccess: () => { qc.invalidateQueries(['usr-admin']); toast.success('Estado actualizado') },
+  })
   const passMut = useMutation({
-    mutationFn: ({id,nueva_password}) => api.post(`/usuarios/${id}/reset-password`,{nueva_password}),
-    onSuccess: () => { qc.invalidateQueries(['usr-admin']); toast.success('Contraseña actualizada'); setPassModal(null); resetP() }
+    mutationFn: ({ id, nueva_password }) => api.post(`/usuarios/${id}/reset-password`, { nueva_password }),
+    onSuccess: () => { qc.invalidateQueries(['usr-admin']); toast.success('Contraseña actualizada'); setPassModal(null); resetP() },
   })
-  const eliminarMut = useMutation({ mutationFn: id => api.delete(`/usuarios/${id}`,{data:{permanente:true}}),
+  const eliminarMut = useMutation({
+    mutationFn: id => api.delete(`/usuarios/${id}`, { data: { permanente: true } }),
     onSuccess: () => { qc.invalidateQueries(['usr-admin']); toast.success('Usuario eliminado'); setConfirmEliminar(null) },
-    onError: e => toast.error(e.response?.data?.message||'Error')
+    onError: e => toast.error(e.response?.data?.message || 'Error'),
   })
 
   return (
@@ -1420,65 +1549,71 @@ export function AdminUsuariosPage() {
         <button onClick={() => setCreateModal(true)} className="btn btn-primary btn-sm"><Plus size={15}/> Nuevo usuario</button>
       </SectionHeader>
       {isLoading ? <LoadingCenter/> : (
-        <div className="card overflow-hidden"><table className="table-pro w-full">
-          <thead><tr><th>Usuario</th><th className="hidden sm:table-cell">CI</th><th className="hidden md:table-cell">Correo</th><th>Rol</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
-          <tbody>
-            {list.map(u => (
-              <tr key={u.id}>
-                <td><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{u.nombre.charAt(0).toUpperCase()}</div><p className="font-medium text-sm truncate max-w-[120px]">{u.nombre}</p></div></td>
-                <td className="hidden sm:table-cell text-gray-500 text-sm">{u.ci||'—'}</td>
-                <td className="hidden md:table-cell text-gray-500 text-sm truncate max-w-[160px]">{u.email}</td>
-                <td><select className="text-xs border rounded-lg px-2 py-1 bg-white" defaultValue={u.rol} onChange={e=>usuariosService.update(u.id,{rol:e.target.value}).then(()=>qc.invalidateQueries(['usr-admin']))}>
-                  {['superadmin','admin','editor'].map(r=><option key={r} value={r}>{r}</option>)}
-                </select></td>
-                <td><button onClick={() => toggleActivoMut.mutate({id:u.id,activo:!u.activo})} className={`badge cursor-pointer text-xs ${u.activo?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}`}>{u.activo?'Activo':'Inactivo'}</button></td>
-                <td className="text-right pr-4"><div className="flex justify-end gap-1.5">
-                  <button onClick={() => { setPassModal(u); resetP() }} className="btn btn-ghost btn-sm text-xs flex items-center gap-1"><RefreshCw size={13}/> Pass</button>
-                  <button onClick={() => setConfirmEliminar(u)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
-                </div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
+        <div className="card overflow-hidden">
+          <table className="table-pro w-full">
+            <thead><tr><th>Usuario</th><th className="hidden sm:table-cell">CI</th><th className="hidden md:table-cell">Correo</th><th>Rol</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <tbody>
+              {list.map(u => (
+                <tr key={u.id}>
+                  <td><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">{u.nombre.charAt(0).toUpperCase()}</div><p className="font-medium text-sm truncate max-w-[120px]">{u.nombre}</p></div></td>
+                  <td className="hidden sm:table-cell text-gray-500 text-sm">{u.ci || '—'}</td>
+                  <td className="hidden md:table-cell text-gray-500 text-sm truncate max-w-[160px]">{u.email}</td>
+                  <td>
+                    <select className="text-xs border rounded-lg px-2 py-1 bg-white" defaultValue={u.rol}
+                      onChange={e => usuariosService.update(u.id, { rol: e.target.value }).then(() => qc.invalidateQueries(['usr-admin']))}>
+                      {['superadmin','admin','editor'].map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <button onClick={() => toggleActivoMut.mutate({ id: u.id, activo: !u.activo })}
+                      className={`badge cursor-pointer text-xs ${u.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </button>
+                  </td>
+                  <td className="text-right pr-4"><div className="flex justify-end gap-1.5">
+                    <button onClick={() => { setPassModal(u); resetP() }} className="btn btn-ghost btn-sm text-xs flex items-center gap-1"><RefreshCw size={13}/> Pass</button>
+                    <button onClick={() => setConfirmEliminar(u)} className="btn btn-ghost btn-sm p-1.5 text-red-500"><Trash2 size={14}/></button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="Nuevo usuario administrador">
         <form onSubmit={hC(d => createMut.mutate(d))} className="space-y-3">
-          <div><label className="label">Nombre completo *</label><input className="input" {...rC('nombre',{required:true})}/></div>
-          <div><label className="label">CI *</label><input className="input" {...rC('ci',{required:true})}/></div>
-          <div><label className="label">Primer apellido *</label><input className="input" {...rC('primer_apellido',{required:true})}/></div>
-          <div><label className="label">Correo electrónico *</label><input className="input" type="email" {...rC('email',{required:true})}/></div>
+          <div><label className="label">Nombre completo *</label><input className="input" {...rC('nombre', { required: true })}/></div>
+          <div><label className="label">CI *</label><input className="input" {...rC('ci', { required: true })}/></div>
+          <div><label className="label">Primer apellido *</label><input className="input" {...rC('primer_apellido', { required: true })}/></div>
+          <div><label className="label">Correo electrónico *</label><input className="input" type="email" {...rC('email', { required: true })}/></div>
           <div><label className="label">Teléfono</label><input className="input" {...rC('telefono')}/></div>
           <div><label className="label">Rol *</label>
-            <select className="input" {...rC('rol',{required:true})}>
+            <select className="input" {...rC('rol', { required: true })}>
               <option value="editor">Editor — crea borradores de noticias</option>
               <option value="admin">Admin — gestiona todo el contenido</option>
               <option value="superadmin">Superadmin — acceso total</option>
             </select>
           </div>
           <div className="bg-blue-50 rounded-xl p-3 text-xs text-secondary">
-            La contraseña temporal se generará como: <strong>CI + inicial_nombre + inicial_apellido</strong><br/>
-            Se enviará por correo al usuario y se mostrará aquí al crear.
+            Contraseña temporal: <strong>CI + inicial_nombre + inicial_apellido</strong>. Se enviará por correo.
           </div>
-          <button type="submit" className="btn btn-primary w-full">{createMut.isPending?'Creando...':'Crear usuario'}</button>
+          <button type="submit" className="btn btn-primary w-full">{createMut.isPending ? 'Creando...' : 'Crear usuario'}</button>
         </form>
       </Modal>
-
       {passModal && (
         <Modal open={!!passModal} onClose={() => setPassModal(null)} title={`Cambiar contraseña — ${passModal.nombre}`} size="sm">
-          <form onSubmit={hP(d => passMut.mutate({id:passModal.id,...d}))} className="space-y-3">
+          <form onSubmit={hP(d => passMut.mutate({ id: passModal.id, ...d }))} className="space-y-3">
             <p className="text-sm text-gray-500">Se enviará un correo a <strong>{passModal.email}</strong></p>
             <div><label className="label">Nueva contraseña *</label>
               <div className="relative">
-                <input className="input pr-10" type={showPass?'text':'password'} placeholder="Mínimo 6 caracteres" {...rP('nueva_password',{required:true,minLength:6})}/>
-                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">{showPass?<EyeOff size={15}/>:<Eye size={15}/>}</button>
+                <input className="input pr-10" type={showPass ? 'text' : 'password'} placeholder="Mínimo 6 caracteres" {...rP('nueva_password', { required: true, minLength: 6 })}/>
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">{showPass ? <EyeOff size={15}/> : <Eye size={15}/>}</button>
               </div>
             </div>
             <button type="submit" className="btn btn-primary w-full"><RefreshCw size={14}/> Actualizar contraseña</button>
           </form>
         </Modal>
       )}
-
       <Modal open={!!confirmEliminar} onClose={() => setConfirmEliminar(null)} title="Eliminar usuario permanentemente" size="sm">
         <div className="space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -1488,7 +1623,7 @@ export function AdminUsuariosPage() {
           <div className="flex gap-2">
             <button onClick={() => setConfirmEliminar(null)} className="btn btn-ghost flex-1">Cancelar</button>
             <button onClick={() => eliminarMut.mutate(confirmEliminar.id)} disabled={eliminarMut.isPending} className="btn flex-1 bg-red-600 hover:bg-red-700 text-white">
-              {eliminarMut.isPending?'Eliminando...':'Eliminar permanentemente'}
+              {eliminarMut.isPending ? 'Eliminando...' : 'Eliminar permanentemente'}
             </button>
           </div>
         </div>

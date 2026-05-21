@@ -1,7 +1,11 @@
 import api from './api'
 import apiPublic from './apiPublic'
 
-// Noticias usa apiPublic para el listado público (no adjunta JWT → no ve borradores)
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTICIAS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Para páginas PÚBLICAS: usa apiPublic (sin JWT → backend solo devuelve publicadas)
 export const noticiasService = {
   getAll:    (p) => apiPublic.get('/noticias', { params: p }),
   getBySlug: (s) => apiPublic.get(`/noticias/${s}`),
@@ -10,6 +14,19 @@ export const noticiasService = {
   publicar:  (id) => api.patch(`/noticias/${id}/publicar`),
   delete:    (id) => api.delete(`/noticias/${id}`),
 }
+
+// Para el PANEL ADMIN: usa api autenticada (JWT → backend devuelve borradores también)
+// Esto garantiza que:
+//   1. Los borradores aparecen en el listado del admin
+//   2. El campo `destacado` llega correctamente para todos los registros
+export const noticiasAdminService = {
+  getAll: (p) => api.get('/noticias', { params: p }),
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESTO DE SERVICIOS (sin cambios)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const categoriasService = {
   getAll: (tipo) => apiPublic.get('/categorias', { params: tipo ? { tipo } : {} }),
   create: (d) => api.post('/categorias', d),
@@ -89,13 +106,12 @@ export const tramitesService = {
   update:  (id, d) => api.put(`/tramites/${id}`, d),
   delete:  (id) => api.delete(`/tramites/${id}`),
 }
-// NUEVO: Transparencia
 export const transparenciaService = {
-  getAll:  () => apiPublic.get('/transparencia'),
-  getAdmin:() => api.get('/transparencia?all=1'),
-  create:  (d) => api.post('/transparencia', d),
-  update:  (id, d) => api.put(`/transparencia/${id}`, d),
-  delete:  (id) => api.delete(`/transparencia/${id}`),
+  getAll:   () => apiPublic.get('/transparencia'),
+  getAdmin: () => api.get('/transparencia?all=1'),
+  create:   (d) => api.post('/transparencia', d),
+  update:   (id, d) => api.put(`/transparencia/${id}`, d),
+  delete:   (id) => api.delete(`/transparencia/${id}`),
 }
 export const usuariosService = {
   getAll:        () => api.get('/usuarios'),
@@ -111,7 +127,6 @@ export const authService = {
   recuperar:       (email) => api.post('/auth/recuperar', { email }),
   resetPassword:   (token, pass) => api.post('/auth/reset-password', { token, password: pass }),
 }
-// Contacto - incluye asunto
 export const contactoService = {
   enviar: (d) => apiPublic.post('/contacto', d),
 }

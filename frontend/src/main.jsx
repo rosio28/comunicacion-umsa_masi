@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.jsx'
 import './index.css'
+// ─── Parche GLOBAL para URLs de Google Drive ────────────────
+// Debe importarse ANTES de renderizar para que afecte a toda la app
+import './utils/patchDriveImages.js'
 
 const queryClient = new QueryClient({
   defaultOptions: {

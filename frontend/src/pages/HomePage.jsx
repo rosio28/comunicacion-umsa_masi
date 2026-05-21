@@ -23,7 +23,7 @@ const HERO_SLIDES = [
     cta2:    { to: '/malla-curricular', label: 'Plan de estudios' },
   },
   {
-    img:     'https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=1600&q=80',
+    img:     'https://drive.google.com/file/d/1_e7XwILUR2KzI4QIqiXwnO2nmJD3aREb/view?usp=sharing',
     eyebrow: 'Periodismo · Radio · Televisión · Digital',
     title:   'Comunicación que transforma',
     sub:     'Formación integral en medios, investigación y producción audiovisual para comunicadores del siglo XXI.',
@@ -31,7 +31,7 @@ const HERO_SLIDES = [
     cta2:    { to: '/docentes',   label: 'Conocer docentes' },
   },
   {
-    img:     'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1600&q=80',
+    img:     'https://drive.google.com/file/d/1Ldi1irCyM0jfNECnQlWy6MAZEJHI9OSp/view?usp=sharing',
     eyebrow: 'La Paz, Bolivia — Desde 1984',
     title:   'Excelencia académica y compromiso social',
     sub:     'Primera carrera de Comunicación Social acreditada internacionalmente en Bolivia.',

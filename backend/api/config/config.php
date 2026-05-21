@@ -19,25 +19,11 @@ define('BACKEND_URL', 'http://localhost:8000');
 ========================= */
 
 define('MAIL_HOST', 'smtp.gmail.com');
-
-/*
-587 = STARTTLS
-NO usar ssl:// con 587
-*/
 define('MAIL_PORT', 587);
-
 define('MAIL_USER', 'mchirinost@fcpn.edu.bo');
-
-/*
-PON LA NUEVA APP PASSWORD
-REGENERADA 16 CARACTERES SIN ESPACIOS
-*/
 define('MAIL_PASS', 'sfotqjgexiyythvg');
-
 define('MAIL_FROM_NAME', 'Comunicación Social UMSA');
-
 define('MAIL_REPLY_TO', 'mchirinost@fcpn.edu.bo');
-
 define('ADMIN_EMAIL', 'mchirinost@fcpn.edu.bo');
 
 /* ========================= */
@@ -45,9 +31,42 @@ define('ADMIN_EMAIL', 'mchirinost@fcpn.edu.bo');
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
 define('MAX_FILE_SIZE', 10 * 1024 * 1024);
 
+/**
+ * Convierte cualquier URL de imagen a URL absoluta servible.
+ *
+ * Soporta:
+ *  - Rutas locales relativas  → BACKEND_URL/ruta
+ *  - URLs externas (http/https) → sin cambio
+ *  - Google Drive share links  → URL de miniatura directa
+ *    Formatos:
+ *      https://drive.google.com/file/d/FILE_ID/view?...
+ *      https://drive.google.com/open?id=FILE_ID
+ *      https://drive.google.com/uc?id=FILE_ID
+ */
 function imageUrl(?string $path): ?string {
     if (!$path) return null;
 
+    // ── Google Drive: convertir share link a thumbnail directo ──
+    // Captura el FILE_ID de los distintos formatos de link de Drive
+    if (str_contains($path, 'drive.google.com')) {
+        $fileId = null;
+
+        // Formato /file/d/FILE_ID/...
+        if (preg_match('#drive\.google\.com/file/d/([a-zA-Z0-9_-]+)#', $path, $m)) {
+            $fileId = $m[1];
+        }
+        // Formato ?id=FILE_ID  (open?id= o uc?id= o uc?export=view&id=)
+        elseif (preg_match('#[?&]id=([a-zA-Z0-9_-]+)#', $path, $m)) {
+            $fileId = $m[1];
+        }
+
+        if ($fileId) {
+            // Thumbnail de alta resolución (hasta 2000px de ancho)
+            return "https://drive.google.com/thumbnail?id={$fileId}&sz=w2000";
+        }
+    }
+
+    // ── URL ya absoluta (http / https) ──────────────────────────
     if (
         str_starts_with($path, 'http://') ||
         str_starts_with($path, 'https://')
@@ -55,6 +74,7 @@ function imageUrl(?string $path): ?string {
         return $path;
     }
 
+    // ── Ruta local relativa → construir URL absoluta del backend ─
     return BACKEND_URL . '/' . ltrim(
         str_replace('\\', '/', $path),
         '/'
