@@ -444,26 +444,149 @@ export function GaleriaPage() {
 // STREAMING
 // ============================================================
 export function StreamingPage() {
-  const { data } = useQuery({ queryKey:['streaming-pub'], queryFn:streamingService.getAll })
-  const canales = data?.data?.data||[]
+  const [activeCanal, setActiveCanal] = useState(null)
+  const { data } = useQuery({
+    queryKey: ['streaming-pub'],
+    queryFn: streamingService.getAll,
+  })
+  const canales = data?.data?.data || []
+ 
+  // Extrae el ID de YouTube del campo embed_id o de la URL
+  function getYouTubeEmbedId(canal) {
+    if (canal.embed_id) return canal.embed_id
+    const match = canal.url_canal?.match(
+      /(?:youtube\.com\/(?:channel\/|c\/|@|watch\?v=)|youtu\.be\/)([^&\n?#/]+)/
+    )
+    return match?.[1] || null
+  }
+ 
+  const icons  = { youtube: '▶', tiktok: '♪', facebook: 'f', radio: '📻' }
+  const colors = { youtube: 'bg-red-600', tiktok: 'bg-gray-900', facebook: 'bg-blue-600', radio: 'bg-primary' }
+ 
   return (
     <div className="section">
       <div className="container-main">
-        <p className="eyebrow">Canales de comunicación</p><h1 className="section-title">Streaming y producciones</h1>
-        {canales.length===0 ? <EmptyState title="Sin canales registrados"/> : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {canales.map(c=>{
-              const icons={youtube:'▶',tiktok:'♪',facebook:'f',radio:'📻'}
-              const colors={youtube:'bg-red-600',tiktok:'bg-gray-900',facebook:'bg-blue-600',radio:'bg-primary'}
-              return (
-                <a key={c.id} href={c.url_canal} target="_blank" rel="noreferrer" className="card p-5 hover:shadow-card-md transition-shadow group">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-10 h-10 rounded-xl ${colors[c.plataforma]||'bg-secondary'} flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform`}>{icons[c.plataforma]||c.plataforma[0].toUpperCase()}</div>
-                    <div><p className="font-semibold text-sm text-gray-800 group-hover:text-primary transition-colors">{c.nombre}</p><p className="text-xs text-gray-400 capitalize">{c.plataforma}</p></div>
+        <p className="eyebrow">Canales de comunicación</p>
+        <h1 className="section-title">Streaming y producciones</h1>
+        <p className="section-sub mb-8">
+          Sigue los canales oficiales de la Carrera de Comunicación Social.
+        </p>
+ 
+        {canales.length === 0 ? (
+          <EmptyState title="Sin canales registrados" />
+        ) : (
+          <div className="space-y-8">
+ 
+            {/* Reproductor activo */}
+            {activeCanal && (
+              <div className="card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+                  <p className="font-semibold text-gray-800">{activeCanal.nombre}</p>
+                  <button
+                    onClick={() => setActiveCanal(null)}
+                    className="text-xs text-gray-400 hover:text-gray-700"
+                  >
+                    ✕ Cerrar
+                  </button>
+                </div>
+                {activeCanal.plataforma === 'youtube' ? (
+                  <div className="aspect-video bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYouTubeEmbedId(activeCanal)}?autoplay=1`}
+                      title={activeCanal.nombre}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   </div>
-                </a>
-              )
-            })}
+                ) : activeCanal.plataforma === 'radio' ? (
+                  <div className="p-6 text-center bg-gray-900">
+                    <p className="text-white text-lg font-semibold mb-3">🎙️ {activeCanal.nombre}</p>
+                    <audio
+                      controls
+                      autoPlay
+                      className="w-full max-w-md mx-auto"
+                      src={activeCanal.url_canal}
+                    >
+                      Tu navegador no soporta audio.
+                    </audio>
+                  </div>
+                ) : (
+                  <div className="aspect-video">
+                    <iframe
+                      src={activeCanal.url_canal}
+                      title={activeCanal.nombre}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+ 
+            {/* Lista de canales */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {canales.map(c => {
+                const ytId = getYouTubeEmbedId(c)
+                const thumb = ytId
+                  ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                  : null
+                const isActive = activeCanal?.id === c.id
+ 
+                return (
+                  <div
+                    key={c.id}
+                    className={`card overflow-hidden group cursor-pointer transition-all
+                      ${isActive ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-card-md'}`}
+                    onClick={() => setActiveCanal(isActive ? null : c)}
+                  >
+                    {/* Miniatura o color */}
+                    <div className="relative h-36 bg-gray-900 overflow-hidden">
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={c.nombre}
+                          className="w-full h-full object-cover opacity-80 group-hover:opacity-70 transition-opacity"
+                        />
+                      ) : (
+                        <div className={`w-full h-full ${colors[c.plataforma] || 'bg-secondary'} flex items-center justify-center`}>
+                          <span className="text-5xl opacity-40">{icons[c.plataforma] || '📡'}</span>
+                        </div>
+                      )}
+                      {/* Botón play superpuesto */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-xl
+                          backdrop-blur-sm transition-transform group-hover:scale-110
+                          ${isActive ? 'bg-primary' : 'bg-black/50'}`}>
+                          {isActive ? '■' : '▶'}
+                        </div>
+                      </div>
+                    </div>
+ 
+                    {/* Info */}
+                    <div className="p-3 flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg ${colors[c.plataforma] || 'bg-secondary'} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                        {icons[c.plataforma] || '📡'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-gray-800 truncate">{c.nombre}</p>
+                        <p className="text-xs text-gray-400 capitalize">{c.plataforma}</p>
+                      </div>
+                      <a
+                        href={c.url_canal}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="ml-auto text-xs text-secondary hover:underline flex-shrink-0"
+                      >
+                        Abrir ↗
+                      </a>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+ 
           </div>
         )}
       </div>

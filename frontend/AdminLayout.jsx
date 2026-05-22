@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard, Newspaper, CalendarDays, Users, GraduationCap,
   Image, MessageSquare, BookOpen, Settings, LogOut, Menu,
-  Award, Video, FileText, Megaphone, Handshake
+  Award, Video, FileText, Megaphone, Handshake, UserCircle
 } from 'lucide-react'
 
 const ROLE_LEVEL = { superadmin: 4, admin: 3, editor: 2, visitante: 1 }
@@ -31,6 +31,9 @@ const NAV = [
   { section: 'Configuración' },
   { to: '/admin/institucional',  icon: Settings,        label: 'Contenido institucional', min: 'admin' },
   { to: '/admin/usuarios',       icon: Users,           label: 'Usuarios',               min: 'superadmin' },
+
+// En el array NAV, dentro de la sección 'Configuración':
+{ to: '/admin/perfil', icon: UserCircle, label: 'Mi perfil', min: 'editor' }
 ]
 
 export default function AdminLayout({ children }) {
