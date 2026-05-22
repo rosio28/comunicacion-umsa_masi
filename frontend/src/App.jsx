@@ -38,6 +38,10 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 })
 
+import AdminPerfilPage from './pages/admin/AdminPerfilPage'
+
+// Cerca de las rutas /admin
+<Route path="/admin/perfil" element={<RequireAuth><AdminLayout><AdminPerfilPage/></AdminLayout></RequireAuth>}/>
 function RequireAuth({ children }) {
   const { token, loading } = useAuth()
   if (loading) return (
