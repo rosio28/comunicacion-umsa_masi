@@ -76,7 +76,7 @@ export default function AdminTransparenciaPage() {
       })
       if (pdfFile instanceof File) fd.append('archivo', pdfFile)
       else if (pdfUrl?.trim())     fd.append('archivo_url', pdfUrl.trim())
-      const cfg = { headers: { 'Content-Type': 'multipart/form-data' } }
+      const cfg = {}
       return editing
         ? api.put(`/transparencia/${editing.id}`, fd, cfg)
         : api.post('/transparencia', fd, cfg)

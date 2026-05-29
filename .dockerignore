@@ -1,0 +1,10 @@
+node_modules
+frontend/node_modules
+backend/vendor
+frontend/dist
+*.log
+.vscode
+.env
+.DS_Store
+.git
+.gitignore

@@ -964,20 +964,63 @@ export function IpicomPage() {
 export function QuienesSomosPage() {
   const claves  = ['mision','vision','historia']
   const queries = claves.map(c => useQuery({ queryKey:['inst-pub',c], queryFn:()=>institucionalService.get(c) }))
+  const items   = queries.map(q => q.data?.data?.data).filter(Boolean)
+
   return (
-    <div className="section">
-      <div className="container-main max-w-4xl">
-        <p className="eyebrow">Institución</p><h1 className="section-title">Quiénes somos</h1>
-        {queries.map((q,i) => {
-          const item = q.data?.data?.data
-          return item ? (
-            <section key={claves[i]} className="mb-10">
-              {item.imagen_url && <img src={item.imagen_url} alt={item.titulo} className="w-full max-h-64 object-cover rounded-2xl mb-5" onError={e=>e.target.style.display='none'}/>}
-              <h2 className="text-xl font-bold text-secondary mb-3 border-l-4 border-primary pl-4">{item.titulo}</h2>
-              <p className="text-gray-700 leading-relaxed text-base">{item.contenido}</p>
-            </section>
-          ) : null
-        })}
+    <div className="section bg-slate-50">
+      <div className="container-main max-w-6xl">
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-card-lg mb-12">
+          <div className="relative grid gap-8 lg:grid-cols-[1.5fr_1fr] p-8 md:p-12">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-primary mb-4">Carrera de Comunicación Social</p>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight text-slate-900">Quiénes somos</h1>
+              <p className="mt-5 max-w-2xl text-base md:text-lg leading-relaxed text-slate-600">La Carrera de Comunicación Social forma profesionales capaces de comunicar con rigor, creatividad y responsabilidad social. Somos un espacio académico comprometido con la cultura paceña, los medios bolivianos y la democracia participativa.</p>
+            </div>
+            <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 shadow-card-sm">
+              <div className="flex flex-wrap gap-3 mb-6">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-primary">Comunicadores</span>
+                <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-secondary">Investigación</span>
+                <span className="rounded-full bg-amber-100/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-amber-600">Extensión social</span>
+              </div>
+              <div className="space-y-4 text-sm leading-7 text-slate-700">
+                <p><span className="font-semibold text-slate-900">Fundación:</span> 20 de agosto de 1984.</p>
+                <p><span className="font-semibold text-slate-900">Misión:</span> formar líderes de la comunicación social boliviana.</p>
+                <p><span className="font-semibold text-slate-900">Visión:</span> ser referente académico y social en La Paz y el país.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {claves.map((clave, index) => {
+            const item = queries[index].data?.data?.data
+            return item ? (
+              <article key={clave} className="group rounded-[1.75rem] border border-slate-200/80 bg-white p-6 shadow-card-sm transition hover:-translate-y-1 hover:shadow-card-md">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.35em] text-blue-600/90 mb-2">{item.titulo}</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{item.titulo}</h2>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-blue-50 text-blue-700 text-xl font-bold">{index + 1}</div>
+                </div>
+                {item.imagen_url && (
+                  <img src={item.imagen_url} alt={item.titulo} className="w-full h-48 object-cover rounded-3xl mb-5 shadow-inner" onError={e=>e.target.style.display='none'} />
+                )}
+                <p className="text-sm leading-7 text-slate-600">{item.contenido}</p>
+              </article>
+            ) : null
+          })}
+        </div>
+
+        <div className="mt-12 rounded-[2rem] bg-white border border-slate-200/80 p-8 shadow-card-md">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.35em] text-blue-500">Sello académico</p>
+              <h2 className="mt-2 text-3xl font-bold text-slate-900">Orgullo paceño y compromiso social</h2>
+            </div>
+            <p className="max-w-2xl text-slate-600 leading-relaxed">En la UMSA de La Paz, Comunicación Social impulsa el análisis crítico de los medios, la investigación social y la formación de profesionales que acompañan el cambio del país desde la cultura, la educación y la ciudadanía.</p>
+          </div>
+        </div>
       </div>
     </div>
   )

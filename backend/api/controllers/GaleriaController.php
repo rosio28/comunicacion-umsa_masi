@@ -128,6 +128,14 @@ class GaleriaController {
 
         // CASO 1: multipart con archivo
         if (!empty($_FILES['imagen']['tmp_name'])) {
+            $logDir = __DIR__ . '/../tmp';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            @file_put_contents($logDir . '/galeria_upload.log', date('c') . ' UPLOAD FILE\n' . var_export([
+                'AUTH' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+                'CONTENT_TYPE' => $_SERVER['CONTENT_TYPE'] ?? null,
+                'POST' => $_POST,
+                'FILES' => $_FILES,
+            ], true) . "\n---\n", FILE_APPEND);
             $up = uploadImage($_FILES['imagen'], 'galeria');
             if (!$up) Response::error('Error al subir imagen. Usa JPG, PNG o WebP, máx 10MB.');
             $url     = $up;
@@ -136,6 +144,14 @@ class GaleriaController {
         }
         // CASO 2: multipart con URL en campo imagen_url
         elseif (!empty($_POST['imagen_url'])) {
+            $logDir = __DIR__ . '/../tmp';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            @file_put_contents($logDir . '/galeria_upload.log', date('c') . ' UPLOAD URL\n' . var_export([
+                'AUTH' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+                'CONTENT_TYPE' => $_SERVER['CONTENT_TYPE'] ?? null,
+                'POST' => $_POST,
+                'BODY_RAW' => file_get_contents('php://input'),
+            ], true) . "\n---\n", FILE_APPEND);
             $url     = trim($_POST['imagen_url']);
             $albumId = !empty($_POST['album_id']) ? (int)$_POST['album_id'] : null;
             $titulo  = $_POST['titulo'] ?? null;
@@ -155,15 +171,31 @@ class GaleriaController {
 
         if (!$url) Response::error('Debes subir una imagen o pegar una URL válida.');
 
-        // Validar que sea una URL si es externa
-        if (str_starts_with($url, 'http') && !filter_var($url, FILTER_VALIDATE_URL)) {
+        // Normalizar y aceptar enlaces de Google Drive y URL sin scheme
+        $url = trim((string)$url);
+        if (str_contains($url, 'drive.google.com')) {
+            $url = imageUrl($url);
+        } elseif (!preg_match('/^https?:\/\//i', $url)) {
+            // Añadir scheme si falta
+            $url = 'https://' . $url;
+        }
+
+        // Validar URL final
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
             Response::error('La URL no tiene un formato válido.');
         }
 
         $db   = Database::getConnection();
         $stmt = $db->prepare("INSERT INTO galeria_imagenes (titulo, url, thumbnail_url, album_id, subido_por, publicado)
             VALUES (?,?,?,?,?,true) RETURNING id, url, thumbnail_url");
-        $stmt->execute([$titulo ?: null, $url, $url, $albumId, $payload['id']]);
+        try {
+            $stmt->execute([$titulo ?: null, $url, $url, $albumId, $payload['id']]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23503') {
+                Response::error('Usuario inválido o no existe. Inicia sesión otra vez.', 400);
+            }
+            throw $e;
+        }
         Response::success($this->ni($stmt->fetch()), 'Imagen agregada', 201);
     }
 

@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-comunicacion_umsa}
+      POSTGRES_USER: ${POSTGRES_USER:-ccs_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ccs_user} -d ${POSTGRES_DB:-comunicacion_umsa}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB:-comunicacion_umsa}
+      DB_USER: ${POSTGRES_USER:-ccs_user}
+      DB_PASS: ${POSTGRES_PASSWORD:-123456}
+      DB_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET:-12345678901234567890123456789012}
+      JWT_EXPIRY: ${JWT_EXPIRY:-28800}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-mchirinost@fcpn.edu.bo}
+      MAIL_PASS: ${MAIL_PASS:-sfotqjgexiyythvg}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-"Comunicación Social UMSA"}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-mchirinost@fcpn.edu.bo}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-mchirinost@fcpn.edu.bo}
+    ports:
+      - "${BACKEND_PORT:-8000}:80"
+    volumes:
+      - ./backend/uploads:/var/www/html/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  db_data:

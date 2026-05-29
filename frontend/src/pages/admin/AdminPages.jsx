@@ -39,7 +39,7 @@ function parseBool(v) {
   return false
 }
 
-const MULTIPART = { headers: { 'Content-Type': 'multipart/form-data' } }
+const MULTIPART = {}
 
 // ─── Componentes compartidos ────────────────────────────────────────────────
 
@@ -979,8 +979,16 @@ export function AdminGaleriaPage() {
     const files = Array.from(e.target.files); if (!files.length) return
     setUploading(true); let ok = 0
     for (const f of files) {
-      try { const fd = new FormData(); fd.append('imagen', f); fd.append('album_id', selAlbum.id); await galeriaService.subirImagen(fd); ok++ }
-      catch { toast.error(`Error: ${f.name}`) }
+      try {
+        const fd = new FormData()
+        fd.append('imagen', f)
+        fd.append('album_id', selAlbum.id)
+        await galeriaService.subirImagen(fd)
+        ok++
+      } catch (error) {
+        const msg = error?.response?.data?.message || error?.message || `Error: ${f.name}`
+        toast.error(msg)
+      }
     }
     refImg(); setUploading(false); if (ok) toast.success(`${ok} imagen(es) agregada(s)`)
   }
@@ -989,8 +997,12 @@ export function AdminGaleriaPage() {
     try {
       const fd = new FormData(); fd.append('imagen_url', newImgUrl.trim()); fd.append('album_id', selAlbum.id)
       if (newImgTitulo) fd.append('titulo', newImgTitulo)
-      await galeriaService.subirImagen(fd); refImg(); setNewImgUrl(''); setNewImgTitulo(''); setShowUrlBox(false); toast.success('Imagen agregada')
-    } catch { toast.error('Error al agregar imagen') }
+      await galeriaService.subirImagen(fd)
+      refImg(); setNewImgUrl(''); setNewImgTitulo(''); setShowUrlBox(false); toast.success('Imagen agregada')
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || 'Error al agregar imagen'
+      toast.error(msg)
+    }
   }
 
   return (
@@ -1366,7 +1378,11 @@ export function AdminWhatsappPage() {
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm()
   const openEdit = g => { setEditing(g); reset({ materia_nombre: g.materia_nombre || '', semestre: g.semestre || 1, gestion: g.gestion || '', enlace_wa: g.enlace_wa || '', activo: g.activo }); setModal(true) }
   const openNew  = () => { setEditing(null); reset({ materia_nombre: '', semestre: 1, gestion: '', enlace_wa: '', activo: true }); setModal(true) }
-  const save = useMutation({ mutationFn: d => editing ? api.put(`/whatsapp/${editing.id}`, d) : api.post('/whatsapp', d), onSuccess: () => { qc.invalidateQueries(['wa-admin']); toast.success('Guardado'); setModal(false) } })
+  const save = useMutation({
+    mutationFn: d => editing ? api.put(`/whatsapp/${editing.id}`, d) : api.post('/whatsapp', d),
+    onSuccess: () => { qc.invalidateQueries(['wa-admin']); toast.success('Guardado'); setModal(false) },
+    onError: (error) => toast.error(error?.response?.data?.message || 'Error al guardar grupo'),
+  })
   const del  = useMutation({ mutationFn: whatsappService.delete, onSuccess: () => { qc.invalidateQueries(['wa-admin']); toast.success('Desactivado') } })
 
   return (

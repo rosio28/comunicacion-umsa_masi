@@ -2,17 +2,17 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-define('DB_HOST',     '127.0.0.1');
-define('DB_NAME',     'comunicacion_umsa');
-define('DB_USER',     'ccs_user');
-define('DB_PASS',     '123456');
-define('DB_PORT',     '5432');
+define('DB_HOST',     getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_NAME',     getenv('DB_NAME') ?: 'comunicacion_umsa');
+define('DB_USER',     getenv('DB_USER') ?: 'ccs_user');
+define('DB_PASS',     getenv('DB_PASS') ?: '123456');
+define('DB_PORT',     getenv('DB_PORT') ?: '5432');
 
-define('JWT_SECRET',  '12345678901234567890123456789012');
-define('JWT_EXPIRY',  28800);
+define('JWT_SECRET',  getenv('JWT_SECRET') ?: '12345678901234567890123456789012');
+define('JWT_EXPIRY',  getenv('JWT_EXPIRY') ?: 28800);
 
-define('FRONTEND_URL','http://localhost:5173');
-define('BACKEND_URL', 'http://localhost:8000');
+define('FRONTEND_URL', getenv('FRONTEND_URL') ?: 'http://localhost');
+define('BACKEND_URL', getenv('BACKEND_URL') ?: 'http://localhost');
 
 /* =========================
    CONFIG SMTP GMAIL

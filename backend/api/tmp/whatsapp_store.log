@@ -1,0 +1,126 @@
+2026-05-29T06:26:13+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:26:13+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:26:14+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:26:14+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:26:57+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:30:44+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbnIgbFM...',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "semestre": 1, "gestion": "2026-1", "enlace_wa": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "activo": true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:31:03+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFyb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "semestre": 1, "gestion": "2026-1", "enlace_wa": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "activo": true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:37:01+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMjk0MDEsImV4cCI6MTc4MDA1ODIwMX0.fxVAld8PbNm4JSdhPn7cx6o-awAtw32k57y7_jc2m9E',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre": "Nombre de materia", "semestre": 1, "gestion": "2026-1", "enlace_wa": "https://chat.whatsapp.com/example", "activo": true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:37:01+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMjk0MDEsImV4cCI6MTc4MDA1ODIwMX0.fxVAld8PbNm4JSdhPn7cx6o-awAtw32k57y7_jc2m9E',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "semestre": 1, "gestion": "2026-1", "enlace_wa": "https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link", "activo": true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:43:48+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:43:52+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-2","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:44:00+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-2","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:44:08+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","semestre":1,"gestion":"2026-2","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---
+2026-05-29T06:48:54+02:00 STORE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMzAxMDgsImV4cCI6MTc4MDA1ODkwOH0.v19fvAzsAYxN-keUaKVqFteLxIng3GrWyZDloKVs1DY',
+  'CONTENT_TYPE' => 'application/json',
+  'BODY_RAW' => '{"materia_nombre":"JFJFJ","semestre":1,"gestion":"2026-1","enlace_wa":"https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link","activo":true}',
+  'POST' => 
+  array (
+  ),
+)
+---

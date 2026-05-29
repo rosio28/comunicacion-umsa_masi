@@ -121,12 +121,28 @@ class WhatsappController {
         Response::success($db->query("SELECT * FROM grupos_whatsapp ORDER BY semestre,gestion DESC")->fetchAll());
     }
     public function store(): void {
+        $logDir = __DIR__ . '/../tmp';
+        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+        @file_put_contents($logDir . '/whatsapp_store.log', date('c') . ' STORE\n' . var_export([
+            'AUTH' => $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+            'CONTENT_TYPE' => $_SERVER['CONTENT_TYPE'] ?? null,
+            'BODY_RAW' => file_get_contents('php://input'),
+            'POST' => $_POST,
+        ], true) . "\n---\n", FILE_APPEND);
+
         $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
         $d = getInputData();
         if (empty($d['materia_nombre'])||empty($d['enlace_wa'])||empty($d['gestion'])) Response::error('Datos incompletos');
         $db = Database::getConnection();
         $stmt = $db->prepare("INSERT INTO grupos_whatsapp (materia_nombre,semestre,gestion,enlace_wa,actualizado_por) VALUES (?,?,?,?,?) RETURNING id");
-        $stmt->execute([$d['materia_nombre'],(int)($d['semestre']??1),$d['gestion'],$d['enlace_wa'],$payload['id']]);
+        try {
+            $stmt->execute([$d['materia_nombre'],(int)($d['semestre']??1),$d['gestion'],$d['enlace_wa'],$payload['id']]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23503') {
+                Response::error('Usuario inválido o no existe. Inicia sesión otra vez.', 400);
+            }
+            throw $e;
+        }
         Response::success($stmt->fetch(), 'Grupo agregado', 201);
     }
     public function update(int $id): void {
@@ -239,7 +255,7 @@ class UsuariosController {
         $stmt = Database::getConnection()->query(
             "SELECT id, nombre, email, rol, activo, avatar_url,
                     ci, primer_apellido, segundo_apellido, telefono,
-                    horas_trabajo, debe_cambiar_password, creado_en
+                    semestre, promedio, horas_certificado, debe_cambiar_password, creado_en, actualizado_en
              FROM usuarios ORDER BY creado_en DESC"
         );
         Response::success($stmt->fetchAll());
@@ -265,8 +281,8 @@ class UsuariosController {
         $db = Database::getConnection();
         try {
             $stmt = $db->prepare(
-                "INSERT INTO usuarios (nombre,email,password_hash,rol,ci,primer_apellido,segundo_apellido,telefono,debe_cambiar_password)
-                 VALUES (?,?,?,?,?,?,?,?,true) RETURNING id"
+                 "INSERT INTO usuarios (nombre,email,password_hash,rol,ci,primer_apellido,segundo_apellido,telefono,debe_cambiar_password)
+                  VALUES (?,?,?,?,?,?,?,?,true) RETURNING id"
             );
             $stmt->execute([
                 trim($d['nombre']), trim($d['email']), $hash, $d['rol'],
@@ -438,121 +454,7 @@ class MultimediaController {
 }
 
 // ============================================================
-// GALERÍA
-// ============================================================
-class GaleriaController {
-    private function na(array $a): array {
-        if (!empty($a['portada_url'])) $a['portada_url'] = imageUrl($a['portada_url']);
-        return $a;
-    }
-    private function ni(array $i): array {
-        if (!empty($i['url']))           $i['url']           = imageUrl($i['url']);
-        if (!empty($i['thumbnail_url'])) $i['thumbnail_url'] = imageUrl($i['thumbnail_url']);
-        if (empty($i['thumbnail_url']))  $i['thumbnail_url'] = $i['url'] ?? null;
-        return $i;
-    }
-
-    public function albumes(): void {
-        $db   = Database::getConnection(); $all = !empty($_GET['all']);
-        $where = $all ? '' : 'WHERE a.publicado=true';
-        $stmt  = $db->query("SELECT a.*,COUNT(g.id) AS total_imagenes FROM albumes a LEFT JOIN galeria_imagenes g ON a.id=g.album_id AND g.publicado=true $where GROUP BY a.id ORDER BY a.id DESC");
-        Response::success(array_map([$this,'na'], $stmt->fetchAll()));
-    }
-
-    public function crearAlbum(): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
-        $d = getInputData();
-        $nombre = trim($d['nombre'] ?? '');
-        if (!$nombre) Response::error('Nombre requerido');
-        $portada = $d['portada_url'] ?? null;
-        if (!empty($_FILES['portada']['tmp_name'])) { $up=uploadImage($_FILES['portada'],'albumes'); if($up) $portada=$up; }
-        $pub = toBoolStr($d['publicado'] ?? true);
-        $db  = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO albumes (nombre,descripcion,portada_url,publicado) VALUES (?,?,?,?) RETURNING id,nombre,portada_url");
-        $stmt->execute([$nombre,$d['descripcion']??null,$portada,$pub]);
-        Response::success($this->na($stmt->fetch()), 'Álbum creado', 201);
-    }
-
-    public function actualizarAlbum(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
-        $d = getInputData();
-        $portada = isset($d['portada_url']) && $d['portada_url'] !== '' ? $d['portada_url'] : null;
-        if (!empty($_FILES['portada']['tmp_name'])) { $up=uploadImage($_FILES['portada'],'albumes'); if($up) $portada=$up; }
-        $db = Database::getConnection();
-
-        // Solo actualiza campos que vienen con valor
-        $fields = [];
-        if (!empty($d['nombre']))          $fields['nombre']      = $d['nombre'];
-        if (array_key_exists('descripcion',$d)) $fields['descripcion'] = $d['descripcion'];
-        if ($portada !== null)             $fields['portada_url'] = $portada;
-        if (array_key_exists('publicado',$d)) $fields['publicado'] = toBoolStr($d['publicado']);
-
-        if (!empty($fields)) {
-            $sets   = implode(', ', array_map(fn($k) => "$k=?", array_keys($fields)));
-            $params = array_values($fields);
-            $params[] = $id;
-            $db->prepare("UPDATE albumes SET $sets WHERE id=?")->execute($params);
-        }
-
-        $stmt = $db->prepare("SELECT * FROM albumes WHERE id=?"); $stmt->execute([$id]);
-        Response::success($this->na($stmt->fetch()), 'Álbum actualizado');
-    }
-
-    public function eliminarAlbum(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
-        $db = Database::getConnection();
-        $db->prepare("DELETE FROM galeria_imagenes WHERE album_id=?")->execute([$id]);
-        $db->prepare("DELETE FROM albumes WHERE id=?")->execute([$id]);
-        Response::success(null, 'Álbum eliminado');
-    }
-
-    public function imagenes(int $albumId): void {
-        $db  = Database::getConnection(); $all = !empty($_GET['all']);
-        $w   = $all ? 'WHERE album_id=?' : 'WHERE album_id=? AND publicado=true';
-        $stmt = $db->prepare("SELECT * FROM galeria_imagenes $w ORDER BY creado_en DESC");
-        $stmt->execute([$albumId]);
-        Response::success(array_map([$this,'ni'], $stmt->fetchAll()));
-    }
-
-    public function subirImagen(): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['editor','admin','superadmin']);
-        $albumId = null; $titulo = null; $url = null;
-
-        if (!empty($_FILES['imagen']['tmp_name'])) {
-            $up = uploadImage($_FILES['imagen'], 'galeria');
-            if (!$up) Response::error('Error al subir imagen.');
-            $url     = $up;
-            $albumId = !empty($_POST['album_id']) ? (int)$_POST['album_id'] : null;
-            $titulo  = $_POST['titulo'] ?? null;
-        } elseif (!empty($_POST['imagen_url'])) {
-            $url     = trim($_POST['imagen_url']);
-            $albumId = !empty($_POST['album_id']) ? (int)$_POST['album_id'] : null;
-            $titulo  = $_POST['titulo'] ?? null;
-        } else {
-            $raw     = file_get_contents('php://input');
-            $d       = json_decode($raw, true) ?? [];
-            $url     = $d['url'] ?? $d['imagen_url'] ?? null;
-            $albumId = isset($d['album_id']) ? (int)$d['album_id'] : null;
-            $titulo  = $d['titulo'] ?? null;
-        }
-
-        if (!$url) Response::error('Debes subir una imagen o pegar una URL válida.');
-
-        $db   = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO galeria_imagenes (titulo,url,thumbnail_url,album_id,subido_por,publicado) VALUES (?,?,?,?,?,true) RETURNING id,url,thumbnail_url");
-        $stmt->execute([$titulo?:null, $url, $url, $albumId, $payload['id']]);
-        Response::success($this->ni($stmt->fetch()), 'Imagen agregada', 201);
-    }
-
-    public function eliminarImagen(int $id): void {
-        $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
-        Database::getConnection()->prepare("DELETE FROM galeria_imagenes WHERE id=?")->execute([$id]);
-        Response::success(null, 'Imagen eliminada');
-    }
-}
-
-// ============================================================
-// MEJORES ALUMNOS
+// MULTIMEDIA
 // ============================================================
 class MejoresAlumnosController {
     public function index(): void {

@@ -12,8 +12,8 @@ class NoticiasController {
     private function norm(array $n): array {
         if (!empty($n['imagen_url'])) $n['imagen_url'] = imageUrl($n['imagen_url']);
         // Normalizar booleanos que PostgreSQL devuelve como 't'/'f'
-        $n['publicado'] = in_array($n['publicado'], [true, 't', 'true', '1', 1], true);
-        $n['destacado'] = in_array($n['destacado'], [true, 't', 'true', '1', 1], true);
+        $n['publicado'] = in_array($n['publicado'] ?? false, [true, 't', 'true', '1', 1], true);
+        $n['destacado'] = in_array($n['destacado'] ?? false, [true, 't', 'true', '1', 1], true);
         return $n;
     }
 

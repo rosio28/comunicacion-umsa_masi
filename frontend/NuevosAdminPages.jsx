@@ -286,7 +286,7 @@ export function AdminConveniosPage() {
       Object.entries(d).forEach(([k, v]) => { if (v !== undefined && String(v) !== '') fd.append(k, String(v)) })
       if (logoFile instanceof File) fd.append('logo', logoFile)
       else if (logoUrl) fd.append('logo_url', logoUrl)
-      const cfg = { headers: { 'Content-Type': 'multipart/form-data' } }
+      const cfg = {}
       return editing ? api.put(`/convenios/${editing.id}`, fd, cfg) : api.post('/convenios', fd, cfg)
     },
     onSuccess: () => { qc.invalidateQueries(['convenios-admin']); toast.success('Guardado'); setModal(false) },

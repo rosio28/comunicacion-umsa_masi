@@ -1,0 +1,89 @@
+2026-05-29T06:24:08+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMjgxNDgsImV4cCI6MTc4MDA1Njk0OH0.RrC5assvhjghr5dfhj4za3lObWH0MDn565vnnSHsONA',
+  'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+  'POST' => 
+  array (
+    'imagen_url' => 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link',
+    'album_id' => '1',
+    'titulo' => 'test',
+  ),
+  'BODY_RAW' => 'imagen_url=https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse%2Fview%3Fusp%3Ddrive_link&album_id=1&titulo=test',
+)
+---
+2026-05-29T06:27:42+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=----WebKitFormBoundaryqzfMDxKqfi4aHPEh',
+  'POST' => 
+  array (
+    'imagen_url' => 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link',
+    'album_id' => '6',
+  ),
+  'BODY_RAW' => '',
+)
+---
+2026-05-29T06:37:18+02:00 UPLOAD FILE\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMjk0MDEsImV4cCI6MTc4MDA1ODIwMX0.fxVAld8PbNm4JSdhPn7cx6o-awAtw32k57y7_jc2m9E',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=3600ca59ac822db1efc34244dadf4b7b',
+  'POST' => 
+  array (
+    'album_id' => '6',
+    'titulo' => 'test-url-image',
+  ),
+  'FILES' => 
+  array (
+    'imagen' => 
+    array (
+      'name' => 'dummy.jpg',
+      'full_path' => 'dummy.jpg',
+      'type' => 'image/jpeg',
+      'tmp_name' => 'C:\\xampp\\tmp\\php78D6.tmp',
+      'error' => 0,
+      'size' => 16,
+    ),
+  ),
+)
+---
+2026-05-29T06:43:22+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=----WebKitFormBoundary55A7w9Uy00Zd42c5',
+  'POST' => 
+  array (
+    'imagen_url' => 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link',
+    'album_id' => '6',
+  ),
+  'BODY_RAW' => '',
+)
+---
+2026-05-29T06:45:09+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=----WebKitFormBoundaryGWHDE2VPq8RYJeAZ',
+  'POST' => 
+  array (
+    'imagen_url' => 'Error interno: SQLSTATE[23503]: Foreign key violation: 7 ERROR: insert or update on table "grupos_whatsapp" violates foreign key constraint "grupos_whatsapp_actualizado_por_fkey" DETAIL: Key (actualizado_por)=(1) is not present in table "usuarios".',
+    'album_id' => '6',
+  ),
+  'BODY_RAW' => '',
+)
+---
+2026-05-29T06:45:19+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IkFkbWluaXN0cmFkb3IgUHJpbmNpcGFsIiwiaWF0IjoxNzgwMDIyMjUwLCJleHAiOjE3ODAwNTEwNTB9.NzTP8snd5va_ISwAojbqtfk446zFp3sBl6JZwUWs4E0',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=----WebKitFormBoundarytrGBwm9mHPQc9rAR',
+  'POST' => 
+  array (
+    'imagen_url' => 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link',
+    'album_id' => '6',
+  ),
+  'BODY_RAW' => '',
+)
+---
+2026-05-29T06:49:24+02:00 UPLOAD URL\narray (
+  'AUTH' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJzdXBlcmFkbWluQGNjcy51bXNhLmJvIiwicm9sIjoic3VwZXJhZG1pbiIsIm5vbWJyZSI6IlN1cGVyIEFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODAwMzAxMDgsImV4cCI6MTc4MDA1ODkwOH0.v19fvAzsAYxN-keUaKVqFteLxIng3GrWyZDloKVs1DY',
+  'CONTENT_TYPE' => 'multipart/form-data; boundary=----WebKitFormBoundaryN2pP4g8QldxHDm4o',
+  'POST' => 
+  array (
+    'imagen_url' => 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=drive_link',
+    'album_id' => '6',
+  ),
+  'BODY_RAW' => '',
+)
+---

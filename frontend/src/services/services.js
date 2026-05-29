@@ -75,7 +75,7 @@ export const galeriaService = {
   updateAlbum: (id, d) => api.put(`/galeria/albumes/${id}`, d),
   deleteAlbum: (id) => api.delete(`/galeria/albumes/${id}`),
   getImagenes: (aid) => apiPublic.get(`/galeria/albumes/${aid}/imagenes`),
-  subirImagen: (fd) => api.post('/galeria/imagenes', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  subirImagen: (fd) => api.post('/galeria/imagenes', fd),
   eliminar:    (id) => api.delete(`/galeria/imagenes/${id}`),
 }
 export const streamingService = {

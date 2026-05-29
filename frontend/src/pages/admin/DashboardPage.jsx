@@ -26,10 +26,10 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Noticias publicadas" value={totalNoticias} icon="📰" color="bg-primary" />
-        <StatCard label="Docentes activos"    value={totalDocentes} icon="👩‍🏫" color="bg-secondary" />
-        <StatCard label="Mejores alumnos"     value={totalAlumnos}  icon="🏆"  color="bg-green-600" />
-        <StatCard label="Grupos WhatsApp"     value={totalGrupos}   icon="💬"  color="bg-green-500" />
+        <StatCard label="Noticias publicadas" value={totalNoticias} emoji="📰" color="bg-primary" />
+        <StatCard label="Docentes activos"    value={totalDocentes} emoji="👩‍🏫" color="bg-secondary" />
+        <StatCard label="Mejores alumnos"     value={totalAlumnos}  emoji="🏆"  color="bg-green-600" />
+        <StatCard label="Grupos WhatsApp"     value={totalGrupos}   emoji="💬"  color="bg-green-500" />
       </div>
 
       {/* Quick actions */}

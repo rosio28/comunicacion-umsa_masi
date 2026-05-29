@@ -27,7 +27,7 @@ require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/NoticiasController.php';
 require_once __DIR__ . '/controllers/DocentesController.php';
 require_once __DIR__ . '/controllers/AllControllers.php';
-// GaleriaController ya está en AllControllers — NO recargar
+require_once __DIR__ . '/controllers/GaleriaController.php';
 
 // ── ROUTING
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

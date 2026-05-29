@@ -126,11 +126,11 @@ export function SectionHeader({ title, subtitle, children }) {
 }
 
 // ─── STAT CARD ─────────────────────────────────────────────
-export function StatCard({ label, value, icon: Icon, color = 'bg-primary', trend }) {
+export function StatCard({ label, value, icon: Icon, emoji, color = 'bg-primary', trend }) {
   return (
     <div className="stat-card">
       <div className={`stat-icon ${color}`}>
-        {Icon && <Icon size={22} />}
+        {emoji ? <span style={{ fontSize: '24px' }}>{emoji}</span> : Icon && <Icon size={22} />}
       </div>
       <div>
         <p className="stat-value">{value}</p>
