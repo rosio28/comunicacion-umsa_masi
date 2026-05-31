@@ -132,6 +132,7 @@ CREATE TABLE materias (
     codigo VARCHAR(20) UNIQUE,
     semestre INTEGER NOT NULL,
     creditos INTEGER,
+    prerrequisitos TEXT,
     area VARCHAR(100),
     tipo VARCHAR(30) DEFAULT 'obligatoria' CHECK (tipo IN ('obligatoria','electiva','taller')),
     pensum VARCHAR(20) DEFAULT '2023',

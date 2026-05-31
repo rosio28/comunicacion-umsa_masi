@@ -1,5 +1,11 @@
 <?php
 ini_set('display_errors', 1);
+// Forzar salida y manejo en UTF-8 de forma global
+ini_set('default_charset', 'UTF-8');
+if (function_exists('mb_internal_encoding')) {
+    mb_internal_encoding('UTF-8');
+    mb_http_output('UTF-8');
+}
 error_reporting(E_ALL);
 
 define('DB_HOST',     getenv('DB_HOST') ?: '127.0.0.1');

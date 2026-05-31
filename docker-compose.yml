@@ -31,7 +31,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-12345678901234567890123456789012}
       JWT_EXPIRY: ${JWT_EXPIRY:-28800}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
-      BACKEND_URL: ${BACKEND_URL:-http://localhost}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8000}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USER: ${MAIL_USER:-mchirinost@fcpn.edu.bo}
@@ -42,7 +42,7 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:80"
     volumes:
-      - ./backend/uploads:/var/www/html/uploads
+      - ./backend/api/uploads:/var/www/html/uploads
     restart: unless-stopped
 
   frontend:

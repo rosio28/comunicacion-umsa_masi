@@ -43,6 +43,9 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='materias' AND column_name='activa') THEN
         ALTER TABLE materias ADD COLUMN activa BOOLEAN DEFAULT true;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='materias' AND column_name='prerrequisitos') THEN
+        ALTER TABLE materias ADD COLUMN prerrequisitos TEXT;
+    END IF;
 END $$;
 
 -- Insertar materias del pensum 2001 (histórico para estudiantes antiguos)

@@ -12,10 +12,13 @@ import '../utils/patchDriveImages'
 
 // ─────────────────────────────────────────────────────────
 // HERO IMAGES — change these to real photos of the career
+// Use backend URL to build servible image paths
 // ─────────────────────────────────────────────────────────
+const rawApiUrl = import.meta.env.VITE_API_URL || ''
+const BACKEND_URL = rawApiUrl.replace(/\/api\/?$/i, '') || ''
 const HERO_SLIDES = [
   {
-    img: 'https://drive.google.com/file/d/1MSN_Nxjlls141Jyyo2J5Fo_FtuUDmSse/view?usp=sharing',
+    img: BACKEND_URL + '/uploads/img1.jpeg',
     eyebrow: 'Carrera de Comunicación Social — UMSA',
     title:   'Formamos la voz de Bolivia',
     sub:     'Más de 40 años formando comunicadores comprometidos con la realidad social, cultural y política de nuestro país.',
@@ -23,7 +26,7 @@ const HERO_SLIDES = [
     cta2:    { to: '/malla-curricular', label: 'Plan de estudios' },
   },
   {
-    img:     'https://drive.google.com/file/d/1_e7XwILUR2KzI4QIqiXwnO2nmJD3aREb/view?usp=sharing',
+    img: BACKEND_URL + '/uploads/img2.jpeg',
     eyebrow: 'Periodismo · Radio · Televisión · Digital',
     title:   'Comunicación que transforma',
     sub:     'Formación integral en medios, investigación y producción audiovisual para comunicadores del siglo XXI.',
@@ -31,7 +34,7 @@ const HERO_SLIDES = [
     cta2:    { to: '/docentes',   label: 'Conocer docentes' },
   },
   {
-    img:     'https://drive.google.com/file/d/1Ldi1irCyM0jfNECnQlWy6MAZEJHI9OSp/view?usp=sharing',
+    img: BACKEND_URL + '/uploads/img3.jpg',
     eyebrow: 'La Paz, Bolivia — Desde 1984',
     title:   'Excelencia académica y compromiso social',
     sub:     'Primera carrera de Comunicación Social acreditada internacionalmente en Bolivia.',
@@ -192,7 +195,7 @@ function NewsTicker({ items }) {
 function NewsCard({ n, size = 'normal' }) {
   if (size === 'featured') {
     return (
-      <Link to={`/noticias/${n.slug}`} className="group block relative rounded-2xl overflow-hidden h-[380px] bg-gray-900">
+      <Link to={`/noticias/${n.slug}`} className="group block relative rounded-2xl overflow-hidden h-[320px] md:h-[340px] bg-gray-900">
         {n.imagen_url
           ? <img src={n.imagen_url} alt={n.titulo} className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-60 group-hover:scale-105 transition-all duration-700" />
           : <div className="absolute inset-0 bg-gradient-to-br from-secondary-dark to-primary" />
@@ -287,14 +290,34 @@ export default function HomePage() {
       <HeroSlider />
       <NewsTicker items={noticias.slice(0, 6)} />
 
-      {/* ── ACCESOS RÁPIDOS ─────────────────────── */}
-      <section className="section-sm">
+      <section className="section bg-secondary/5">
         <div className="container-main">
-          <div className="text-center mb-8">
-            <p className="eyebrow mb-2">Accesos directos</p>
-            <h2 className="section-title">¿Qué estás buscando?</h2>
+          <div className="rounded-[32px] border border-secondary/10 bg-white p-8 shadow-card-lg mb-10">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="eyebrow mb-2">Bienvenida</p>
+                <h2 className="section-title">Información clara para la comunidad</h2>
+                <p className="section-sub mt-3 text-gray-600">Accede a noticias, eventos, recursos y servicios clave en un solo lugar con un diseño limpio y fácil de usar.</p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-3xl border border-primary/10 bg-primary/5 px-5 py-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Noticias</p>
+                  <p className="mt-2 text-3xl font-bold text-primary">{noticias.length}</p>
+                </div>
+                <div className="rounded-3xl border border-secondary/10 bg-secondary/5 px-5 py-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">Eventos</p>
+                  <p className="mt-2 text-3xl font-bold text-secondary">{eventos.length}</p>
+                </div>
+                <div className="rounded-3xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.22em] text-indigo-700/80">Multimedia</p>
+                  <p className="mt-2 text-3xl font-bold text-indigo-700">{media.length}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[
               { to: '/whatsapp',         icon: MessageCircle, label: 'WhatsApp',       desc: 'Grupos por materia',     color: 'bg-green-500' },
               { to: '/malla-curricular', icon: BookOpen,      label: 'Malla',          desc: 'Plan 2023',              color: 'bg-secondary' },
@@ -307,83 +330,123 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── NOTICIAS ────────────────────────────── */}
-      <section className="section bg-gray-50/70">
+      <section className="section">
         <div className="container-main">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="eyebrow mb-1.5">Actualidad</p>
-              <h2 className="section-title">Últimas noticias</h2>
-            </div>
-            <Link to="/noticias" className="btn btn-outline btn-sm hidden sm:inline-flex">
-              Ver todas <ChevronRight size={14} />
-            </Link>
-          </div>
-
-          {noticias.length > 0 ? (
-            <div className="grid lg:grid-cols-3 gap-5">
-              <div className="lg:col-span-2">
-                {featured && <NewsCard n={featured} size="featured" />}
+          <div className="rounded-[32px] border border-secondary/10 bg-white p-6 shadow-card-lg">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between mb-6">
+              <div>
+                <p className="eyebrow mb-1.5">Actualidad</p>
+                <h2 className="section-title">Últimas noticias</h2>
               </div>
-              <div className="flex flex-col gap-1 justify-between">
-                {rest.map(n => <NewsCard key={n.id} n={n} />)}
-              </div>
+              <Link to="/noticias" className="btn btn-outline btn-sm hidden sm:inline-flex">
+                Ver todas <ChevronRight size={14} />
+              </Link>
             </div>
-          ) : (
-            <div className="text-center py-16 text-gray-400">
-              <Newspaper size={40} className="mx-auto mb-3 opacity-30" />
-              <p>Las noticias aparecerán aquí una vez publicadas.</p>
-            </div>
-          )}
 
-          <div className="mt-6 text-center sm:hidden">
-            <Link to="/noticias" className="btn btn-outline">Ver todas las noticias</Link>
+            {noticias.length > 0 ? (
+              <div className="grid gap-5 lg:grid-cols-[2.3fr_1fr]">
+                <div>{featured && <NewsCard n={featured} size="featured" />}</div>
+                <div className="grid gap-3">
+                  {rest.map(n => <NewsCard key={n.id} n={n} />)}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-16 text-gray-400">
+                <Newspaper size={40} className="mx-auto mb-3 opacity-30" />
+                <p>Las noticias aparecerán aquí una vez publicadas.</p>
+              </div>
+            )}
+
+            <div className="mt-6 text-center sm:hidden">
+              <Link to="/noticias" className="btn btn-outline">Ver todas las noticias</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── MISIÓN Y VISIÓN ─────────────────────── */}
-      <section className="section bg-secondary relative overflow-hidden">
-        {/* Decorative shapes */}
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-white/3 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 bg-dots opacity-5" />
-
-        <div className="container-main relative">
-          <div className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-300 mb-2">Identidad institucional</p>
-            <h2 className="font-display text-3xl lg:text-4xl font-bold text-white">
-              Nuestra razón de ser
-            </h2>
+      <section className="section">
+        <div className="container-main">
+          <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="eyebrow mb-2">Agenda académica</p>
+                <h2 className="section-title">Próximos eventos</h2>
+              </div>
+              <Link to="/eventos" className="btn btn-outline btn-sm hidden sm:inline-flex">
+                Ver calendario <ChevronRight size={14} />
+              </Link>
+            </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
+
+          {eventos.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {eventos.slice(0, 4).map((e, i) => (
+                <div key={e.id} className="card p-5 border border-secondary/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card-md">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-3xl flex flex-col items-center justify-center text-white text-xs font-bold" style={{ background: e.color || '#C0392B' }}>
+                      <span className="text-base leading-none">{new Date(e.fecha_inicio).getDate()}</span>
+                      <span className="text-[10px] uppercase opacity-80">{new Date(e.fecha_inicio).toLocaleDateString('es', { month: 'short' })}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: e.color || '#C0392B' }}>{e.tipo}</span>
+                      <p className="mt-2 font-semibold text-gray-900 line-clamp-2">{e.titulo}</p>
+                    </div>
+                  </div>
+                  {e.lugar && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <MapPin size={12} />
+                      <span className="truncate">{e.lugar}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[28px] border border-secondary/10 bg-white p-10 text-center text-gray-500">
+              No hay eventos próximos. Pronto publicaremos nuevas actividades.
+            </div>
+          )}
+
+          <div className="mt-8 text-center sm:hidden">
+            <Link to="/eventos" className="btn btn-outline">Ver calendario</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="section bg-secondary relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="container-main relative">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-300 mb-2">Identidad institucional</p>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold text-white">Misión y visión</h2>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
             {[
               { key: 'mision', data: mision, label: 'Misión', icon: '◈' },
               { key: 'vision', data: vision, label: 'Visión', icon: '◉' },
             ].map(({ key, data, label, icon }) => (
-              <div key={key} className="glass rounded-2xl p-7">
+              <div key={key} className="glass rounded-3xl p-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                    <span className="text-primary-light text-lg">{icon}</span>
+                  <div className="w-11 h-11 bg-primary/20 rounded-2xl flex items-center justify-center text-primary text-lg">
+                    {icon}
                   </div>
-                  <h3 className="text-white font-bold text-lg">{label}</h3>
+                  <h3 className="text-white font-semibold text-lg">{label}</h3>
                 </div>
                 <p className="text-blue-100/80 text-sm leading-relaxed">
-                  {data?.data?.data?.contenido
-                    ? truncate(data.data.data.contenido, 260)
-                    : 'Cargando...'}
+                  {data?.data?.data?.contenido ? truncate(data.data.data.contenido, 260) : 'Cargando...' }
                 </p>
               </div>
             ))}
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10 max-w-2xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
             {[
-              { value: '1984', label: 'Fundación',       color: 'bg-white/10' },
-              { value: '40+',  label: 'Años',            color: 'bg-primary/30' },
-              { value: '5000+', label: 'Estudiantes',    color: 'bg-white/10' },
-              { value: '#1',   label: 'Bolivia',         color: 'bg-primary/30' },
+              { value: '1984', label: 'Fundación', color: 'bg-white/10' },
+              { value: '40+', label: 'Años', color: 'bg-primary/30' },
+              { value: '5000+', label: 'Estudiantes', color: 'bg-white/10' },
+              { value: '#1', label: 'Bolivia', color: 'bg-primary/30' },
             ].map(s => <StatItem key={s.label} {...s} />)}
           </div>
 
@@ -395,189 +458,103 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── EVENTOS ─────────────────────────────── */}
-      {eventos.length > 0 && (
-        <section className="section-sm">
-          <div className="container-main">
-            <div className="flex items-end justify-between mb-7">
-              <div>
-                <p className="eyebrow mb-1.5">Agenda</p>
-                <h2 className="section-title">Próximos eventos</h2>
-              </div>
-              <Link to="/eventos" className="btn btn-outline btn-sm hidden sm:inline-flex">
-                Ver calendario <ChevronRight size={14} />
-              </Link>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  {eventos.slice(0, 4).map((e, i) => (
-    <div
-      key={e.id}
-      className={`card p-4 hover:shadow-card-md transition-all duration-300 anim-fade-up delay-${(i + 1) * 100}`}
-    >
-      <div className="flex items-start gap-3 mb-3">
-        <div
-          className="flex-shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center text-white text-xs font-bold"
-          style={{ background: e.color || '#C0392B' }}
-        >
-          <span className="text-base leading-none font-bold">
-            {new Date(e.fecha_inicio).getDate()}
-          </span>
-          <span className="text-xs opacity-80 leading-none">
-            {new Date(e.fecha_inicio).toLocaleDateString('es', {
-              month: 'short',
-            })}
-          </span>
-        </div>
-
-        <div className="min-w-0">
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: e.color || '#C0392B' }}
-          >
-            {e.tipo}
-          </span>
-
-          <p className="font-semibold text-sm text-gray-800 mt-0.5 line-clamp-2 leading-snug">
-            {e.titulo}
-          </p>
-        </div>
-      </div>
-
-      {e.lugar && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-          <MapPin size={11} />
-          <span className="truncate">{e.lugar}</span>
-        </div>
-      )}
-    </div>
-  ))}
-</div>
-          </div>
-        </section>
-      )}
-
-      {/* ── MULTIMEDIA ──────────────────────────── */}
       {media.length > 0 && (
         <section className="section bg-gray-900 relative overflow-hidden">
           <div className="absolute inset-0 bg-dots opacity-10" />
           <div className="container-main relative">
-            <div className="flex items-end justify-between mb-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between mb-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-primary-light mb-1.5">Producción estudiantil</p>
-                <h2 className="text-2xl lg:text-3xl font-bold text-white">Multimedia</h2>
+                <h2 className="text-2xl lg:text-3xl font-bold text-white">Multimedia destacada</h2>
               </div>
               <Link to="/multimedia" className="btn btn-sm glass text-white hover:bg-white/20">
                 Ver todo <ChevronRight size={14} />
               </Link>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {media.slice(0, 4).map(m => {
 
-              const videoId = m.url_contenido?.match(
-                /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/
-              )?.[1]
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {media.slice(0, 4).map(m => {
+                const videoId = m.url_contenido?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/)?.[1]
+                const thumb = m.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null)
 
-              const thumb =
-                m.thumbnail_url ||
-                (videoId
-                  ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-                  : null)
+                return (
+                  <a
+                    key={m.id}
+                    href={m.url_contenido}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group relative overflow-hidden rounded-[28px] bg-gray-800 h-44 block"
+                  >
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt={m.titulo}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '/placeholder.jpg'
+                        }}
+                        className="h-full w-full object-cover opacity-80 group-hover:opacity-70 transition-all duration-500"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-gray-700 to-gray-900" />
+                    )}
 
-              return (
-                <a
-                  key={m.id}
-                  href={m.url_contenido}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group relative rounded-2xl overflow-hidden bg-gray-800 h-44 block"
-                >
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt={m.titulo}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src =
-                          videoId
-                            ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-                            : '/placeholder.jpg'
-                      }}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900" />
-                  )}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <Play size={20} className="text-white ml-0.5" fill="white" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Play size={20} className="text-white" />
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-xs font-semibold line-clamp-2">
-                      {m.titulo}
-                    </p>
-
-                    <p className="text-white/50 text-xs mt-0.5">
-                      {m.autor_nombre}
-                    </p>
-                  </div>
-                </a>
-              )
-            })}
-          </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <p className="text-white text-sm font-semibold line-clamp-2">{m.titulo}</p>
+                      <p className="text-white/60 text-xs mt-1">{m.autor_nombre}</p>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
           </div>
         </section>
       )}
 
-      {/* ── COMUNIDAD ───────────────────────────── */}
       <section className="section">
         <div className="container-main">
           <div className="text-center mb-10">
             <p className="eyebrow mb-2">Comunidad académica</p>
             <h2 className="section-title">Parte de la familia CCS</h2>
-            <p className="section-sub max-w-lg mx-auto mt-2">
-              Docentes, estudiantes y egresados que construyen la comunicación boliviana.
-            </p>
+            <p className="section-sub max-w-lg mx-auto mt-2">Docentes, estudiantes y egresados que construyen la comunicación boliviana.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-5">
             {[
               {
-                to:    '/docentes',
-                icon:  Users,
+                to: '/docentes',
+                icon: Users,
                 title: 'Cuerpo docente',
-                desc:  'Profesionales con experiencia en medios, investigación y comunicación estratégica.',
+                desc: 'Profesionales con experiencia en medios, investigación y comunicación estratégica.',
                 color: 'from-secondary to-secondary-light',
-                bg:    'bg-secondary-50',
               },
               {
-                to:    '/mejores-alumnos',
-                icon:  Award,
+                to: '/mejores-alumnos',
+                icon: Award,
                 title: 'Mejores estudiantes',
-                desc:  'Reconocimiento semestral a la excelencia académica y el compromiso estudiantil.',
+                desc: 'Reconocimiento semestral a la excelencia académica y el compromiso estudiantil.',
                 color: 'from-primary to-primary-light',
-                bg:    'bg-primary-50',
               },
               {
-                to:    '/egresados',
-                icon:  GraduationCap,
+                to: '/egresados',
+                icon: GraduationCap,
                 title: 'Egresados',
-                desc:  'Comunicadores activos en los principales medios y organizaciones de Bolivia.',
+                desc: 'Comunicadores activos en los principales medios y organizaciones de Bolivia.',
                 color: 'from-indigo-600 to-indigo-500',
-                bg:    'bg-indigo-50',
               },
-            ].map(({ to, icon: Icon, title, desc, color, bg }) => (
+            ].map(({ to, icon: Icon, title, desc, color }) => (
               <Link key={to} to={to} className="group card card-lift p-6">
-                <div className={`w-14 h-14 bg-gradient-to-br ${color} rounded-2xl flex items-center justify-center mb-5
-                                 group-hover:scale-110 transition-transform duration-300 shadow-card-md`}>
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center mb-5 shadow-card-md`}>
                   <Icon size={24} className="text-white" />
                 </div>
                 <h3 className="font-bold text-gray-900 text-lg mb-2">{title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                <div className="flex items-center gap-1.5 mt-5 text-sm font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                   Explorar <ArrowRight size={15} />
                 </div>
               </Link>
@@ -586,24 +563,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA FINAL ───────────────────────────── */}
       <section className="relative bg-gradient-to-r from-primary-dark via-primary to-primary-light py-16 overflow-hidden">
         <div className="absolute inset-0 bg-dots opacity-10" />
         <div className="container-main relative text-center">
-          <h2 className="font-display text-3xl lg:text-4xl font-bold text-white mb-4">
-            ¿Tienes alguna consulta?
-          </h2>
-          <p className="text-white/80 text-base mb-7 max-w-md mx-auto">
-            Contáctanos directamente. Estamos en el Edificio René Zavaleta, Piso 5.
-          </p>
+          <h2 className="font-display text-3xl lg:text-4xl font-bold text-white mb-4">¿Tienes alguna consulta?</h2>
+          <p className="text-white/80 text-base mb-7 max-w-md mx-auto">Contáctanos directamente. Estamos en el Edificio René Zavaleta, Piso 5.</p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link to="/contacto" className="btn btn-white btn-lg">
-              Contactar ahora <ArrowRight size={17} />
-            </Link>
-            <Link to="/tramites"
-              className="btn btn-lg border-2 border-white/40 text-white bg-transparent hover:bg-white/10">
-              Ver trámites
-            </Link>
+            <Link to="/contacto" className="btn btn-white btn-lg">Contactar ahora <ArrowRight size={17} /></Link>
+            <Link to="/tramites" className="btn btn-lg border-2 border-white/40 text-white bg-transparent hover:bg-white/10">Ver trámites</Link>
           </div>
         </div>
       </section>

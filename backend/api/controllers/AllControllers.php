@@ -575,18 +575,28 @@ class MateriasController {
         $d = getInputData();
         if (empty($d['nombre'])||!isset($d['semestre'])) Response::error('Nombre y semestre requeridos');
         $db   = Database::getConnection();
-        $stmt = $db->prepare("INSERT INTO materias (nombre,codigo,semestre,creditos,area,tipo,pensum) VALUES (?,?,?,?,?,?,?) RETURNING id");
-        $stmt->execute([$d['nombre'],$d['codigo']??null,(int)$d['semestre'],isset($d['creditos'])?(int)$d['creditos']:null,$d['area']??null,$d['tipo']??'obligatoria',$d['pensum']??'2023']);
+        $stmt = $db->prepare("INSERT INTO materias (nombre,codigo,semestre,creditos,prerrequisitos,area,tipo,pensum) VALUES (?,?,?,?,?,?,?,?) RETURNING id");
+        $stmt->execute([
+            $d['nombre'],
+            $d['codigo'] ?? null,
+            (int)$d['semestre'],
+            isset($d['creditos']) ? (int)$d['creditos'] : null,
+            $d['prerrequisitos'] ?? null,
+            $d['area'] ?? null,
+            $d['tipo'] ?? 'obligatoria',
+            $d['pensum'] ?? '2023'
+        ]);
         Response::success($stmt->fetch(), 'Materia creada', 201);
     }
     public function update(int $id): void {
         $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
         $d  = getInputData();
         $db = Database::getConnection(); $fields = [];
-        if (!empty($d['nombre']))   $fields['nombre']   = $d['nombre'];
-        if (isset($d['creditos'])&&$d['creditos']!=='') $fields['creditos'] = (int)$d['creditos'];
-        if (!empty($d['area']))     $fields['area']     = $d['area'];
-        if (!empty($d['tipo']))     $fields['tipo']     = $d['tipo'];
+        if (!empty($d['nombre']))          $fields['nombre']          = $d['nombre'];
+        if (isset($d['creditos']) && $d['creditos'] !== '') $fields['creditos'] = (int)$d['creditos'];
+        if (isset($d['prerrequisitos']))   $fields['prerrequisitos']   = $d['prerrequisitos'] !== '' ? $d['prerrequisitos'] : null;
+        if (!empty($d['area']))            $fields['area']            = $d['area'];
+        if (!empty($d['tipo']))            $fields['tipo']            = $d['tipo'];
         if (!empty($fields)) updateIfNotEmpty($db,'materias',$id,$fields);
         Response::success(null, 'Materia actualizada');
     }

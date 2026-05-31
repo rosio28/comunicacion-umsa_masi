@@ -17,7 +17,7 @@ import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import {
   Clock, MapPin, ExternalLink, ChevronRight, Play, FileText,
-  Download, Send, Phone, Mail, Globe, ArrowRight
+  Download, Send, Phone, Mail, Globe, ArrowRight, Award
 } from 'lucide-react'
 import apiPublic from '../services/apiPublic'
 
@@ -40,39 +40,91 @@ export function NoticiasPage() {
   const pagination = data?.data?.pagination  || {}
 
   return (
-    <div className="section">
+    <div className="section bg-secondary/5">
       <div className="container-main">
-        <div className="mb-8"><p className="eyebrow">Actualidad</p><h1 className="section-title">Noticias</h1></div>
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Actualidad</p>
+            <h1 className="section-title">Noticias</h1>
+            <p className="section-sub mt-4 text-gray-600">Mantente informado sobre las últimas noticias, eventos y novedades de la Carrera de Comunicación Social UMSA.</p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Contenido actualizado</span>
+              <span className="rounded-full border border-secondary/20 bg-secondary/10 px-3 py-2">Múltiples categorías</span>
+            </div>
+          </div>
+        </div>
+
         {cats.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-7">
-            <button onClick={() => { setCat(''); setPage(1) }}
-              className={`badge cursor-pointer px-3 py-1.5 text-xs font-semibold transition-all ${!cat?'bg-primary text-white':'badge-gray hover:bg-gray-200'}`}>
+          <div className="mb-10 flex flex-wrap gap-3">
+            <button 
+              onClick={() => { setCat(''); setPage(1) }}
+              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                !cat 
+                  ? 'bg-primary text-white shadow-md' 
+                  : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
               Todas
             </button>
             {cats.map(c => (
-              <button key={c.id} onClick={() => { setCat(c.id); setPage(1) }}
-                className={`badge cursor-pointer px-3 py-1.5 text-xs font-semibold transition-all ${cat===c.id?'bg-primary text-white':'badge-gray hover:bg-gray-200'}`}>
+              <button 
+                key={c.id} 
+                onClick={() => { setCat(c.id); setPage(1) }}
+                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                  cat === c.id 
+                    ? 'bg-secondary text-white shadow-md' 
+                    : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
                 {c.nombre}
               </button>
             ))}
           </div>
         )}
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="No hay noticias publicadas"/> : (
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="No hay noticias publicadas" />
+        ) : (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {list.map(n => (
-                <Link key={n.id} to={`/noticias/${n.slug}`} className="card card-lift group">
-                  <div className="h-44 overflow-hidden bg-gray-100">
-                    {n.imagen_url
-                      ? <img src={n.imagen_url} alt={n.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e=>e.target.style.display='none'}/>
-                      : <div className="w-full h-full bg-gradient-to-br from-secondary-50 to-primary-50 flex items-center justify-center"><ChevronRight size={20} className="text-secondary"/></div>
-                    }
+                <Link 
+                  key={n.id} 
+                  to={`/noticias/${n.slug}`} 
+                  className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card-md"
+                >
+                  <div className="h-48 overflow-hidden bg-gray-100">
+                    {n.imagen_url ? (
+                      <img 
+                        src={n.imagen_url} 
+                        alt={n.titulo} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        onError={e => e.target.style.display = 'none'}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center">
+                        <ChevronRight size={24} className="text-secondary/40" />
+                      </div>
+                    )}
                   </div>
-                  <div className="p-4">
-                    {n.categoria && <Badge color={n.color_hex||'#1A5276'}>{n.categoria}</Badge>}
-                    <h2 className="font-semibold text-gray-800 mt-2 group-hover:text-primary transition-colors line-clamp-2 leading-snug">{n.titulo}</h2>
-                    {n.resumen && <p className="text-gray-500 text-sm mt-1.5 line-clamp-2">{n.resumen}</p>}
-                    <p className="flex items-center gap-1.5 mt-3 text-xs text-gray-400"><Clock size={12}/>{formatDate(n.publicado_en)}</p>
+                  <div className="p-5">
+                    {n.categoria && (
+                      <Badge color={n.color_hex || '#1A5276'}>{n.categoria}</Badge>
+                    )}
+                    <h2 className="mt-4 font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug text-base">
+                      {n.titulo}
+                    </h2>
+                    {n.resumen && (
+                      <p className="text-gray-600 text-sm mt-2.5 line-clamp-2 leading-relaxed">
+                        {n.resumen}
+                      </p>
+                    )}
+                    <div className="mt-4 flex items-center gap-1.5 text-xs text-gray-500">
+                      <Clock size={14} className="text-secondary" />
+                      {formatDate(n.publicado_en)}
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -122,16 +174,31 @@ export function EventosPage() {
   const pasados  = eventos.filter(e=>new Date(e.fecha_inicio)<hoy).sort((a,b)=>new Date(b.fecha_inicio)-new Date(a.fecha_inicio))
 
   return (
-    <div className="section">
+    <div className="section bg-secondary/5">
       <div className="container-main">
-        <div className="flex items-end justify-between mb-8">
-          <div><p className="eyebrow">Agenda académica</p><h1 className="section-title">Eventos y actividades</h1></div>
-          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-            {['lista','calendario'].map(v=>(
-              <button key={v} onClick={()=>setView(v)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all capitalize ${view===v?'bg-white shadow-sm text-secondary':'text-gray-500 hover:text-gray-700'}`}>{v}</button>
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Agenda académica</p>
+            <h1 className="section-title">Eventos y actividades</h1>
+            <p className="section-sub mt-4 text-gray-600">Participa en encuentros, talleres y presentaciones diseñadas para la comunidad estudiantil y profesional.</p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
+              <span className="rounded-full border border-secondary/20 bg-secondary/10 px-3 py-2">Próximos encuentros</span>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Fechas claras y ubicación visible</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3 rounded-3xl border border-secondary/10 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm">
+            <span className="font-semibold text-secondary">Ver como:</span>
+            {['lista', 'calendario'].map(v => (
+              <button key={v} onClick={() => setView(v)}
+                className={`rounded-full px-4 py-2 transition ${view===v ? 'bg-secondary/10 text-secondary' : 'hover:bg-gray-100 text-gray-600'}`}>
+                {v === 'lista' ? 'Lista' : 'Calendario'}
+              </button>
             ))}
           </div>
+          <div className="text-sm text-gray-500">Eventos publicados: <span className="font-semibold text-gray-900">{eventos.length}</span></div>
         </div>
         {isLoading ? <LoadingCenter/> : (
           <>
@@ -143,20 +210,44 @@ export function EventosPage() {
               </div>
             )}
             {view==='lista' && (
-              <div>
-                {proximos.length>0 && (
-                  <div className="mb-8">
-                    <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 inline-block"/>Próximos eventos</h2>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{proximos.map(e=><EventCard key={e.id} e={e} onClick={()=>setSelected(e)}/>)}</div>
-                  </div>
+              <div className="space-y-8">
+                {proximos.length > 0 ? (
+                  <>
+                    <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+                      <div className="rounded-[32px] border border-secondary/10 bg-white p-8 shadow-card-lg">
+                        <h2 className="text-xl font-semibold text-gray-900">Siguiente evento</h2>
+                        <p className="mt-3 text-gray-600 leading-relaxed">No te pierdas la siguiente actividad programada por la carrera.</p>
+                        <div className="mt-8">
+                          <EventCard e={proximos[0]} onClick={() => setSelected(proximos[0])} featured />
+                        </div>
+                      </div>
+                      <div className="rounded-[32px] border border-secondary/10 bg-white p-8 shadow-sm">
+                        <h3 className="text-base font-semibold text-gray-900 uppercase tracking-[0.18em] text-secondary">Próximos eventos</h3>
+                        <p className="mt-3 text-sm text-gray-600">Encuentra el resto de actividades próximas en una vista clara y directa.</p>
+                        <div className="mt-6 space-y-4">
+                          {proximos.length > 1 ? (
+                            proximos.slice(1, 5).map(e => (
+                              <EventCard key={e.id} e={e} onClick={() => setSelected(e)} compact />
+                            ))
+                          ) : (
+                            <div className="rounded-3xl border border-secondary/10 bg-secondary/10 p-5 text-sm text-gray-600">
+                              <p className="font-medium text-gray-900">Solo hay un evento programado por ahora.</p>
+                              <p className="mt-2">Mantente atento a nuevas actividades en el calendario o regresa pronto para más actualizaciones.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {proximos.length > 5 && (
+                      <div className="rounded-[28px] border border-secondary/10 bg-white p-6 shadow-sm">
+                        <h3 className="font-semibold text-gray-900">Más eventos</h3>
+                        <p className="mt-2 text-sm text-gray-500">Hay más actividades programadas. Usa el calendario para verlas todas en un solo lugar.</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <EmptyState title="No hay eventos próximos" subtitle="Pronto publicaremos nuevas actividades para la comunidad." />
                 )}
-                {pasados.length>0 && (
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-500 mb-4 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-gray-300 inline-block"/>Eventos anteriores</h2>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-70">{pasados.slice(0,6).map(e=><EventCard key={e.id} e={e} onClick={()=>setSelected(e)} past/>)}</div>
-                  </div>
-                )}
-                {eventos.length===0 && <EmptyState title="No hay eventos publicados"/>}
               </div>
             )}
           </>
@@ -203,26 +294,44 @@ export function EventosPage() {
   )
 }
 
-function EventCard({ e, onClick, past=false }) {
+function EventCard({ e, onClick, featured = false, compact = false }) {
   const d = new Date(e.fecha_inicio)
   return (
-    <div className={`card p-4 cursor-pointer hover:shadow-card-md transition-all ${past?'':'card-lift'}`} onClick={onClick}>
-      <div className="flex gap-3 mb-3">
-        <div className="flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center text-white" style={{background:e.color||'#C0392B'}}>
-          <span className="text-lg font-bold leading-none">{d.getDate()}</span>
-          <span className="text-xs opacity-80">{d.toLocaleDateString('es',{month:'short'})}</span>
-        </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group w-full text-left overflow-hidden rounded-[28px] border border-secondary/10 bg-white p-6 transition hover:-translate-y-1 hover:shadow-card-md ${featured ? 'shadow-card-lg' : 'shadow-sm'}`}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <Badge color={e.color||'#C0392B'}>{e.tipo}</Badge>
-          <p className="font-semibold text-sm text-gray-800 mt-1 line-clamp-2 leading-snug">{e.titulo}</p>
+          <Badge color={e.color || '#C0392B'}>{e.tipo}</Badge>
+          <h3 className={`mt-4 font-semibold text-gray-900 ${featured ? 'text-xl' : 'text-base'} leading-snug line-clamp-2`}>{e.titulo}</h3>
+        </div>
+        <div className="rounded-3xl bg-secondary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+          {d.toLocaleDateString('es', { day: 'numeric', month: 'short' }).toUpperCase()}
         </div>
       </div>
-      <div className="flex flex-col gap-1 text-xs text-gray-400">
-        <span className="flex items-center gap-1.5"><Clock size={11}/>{formatDateTime(e.fecha_inicio)}</span>
-        {e.lugar && <span className="flex items-center gap-1.5"><MapPin size={11}/>{e.lugar}</span>}
-        {e.latitud && e.longitud && <span className="text-blue-500">📍 Ver ubicación</span>}
+
+      {!compact && e.descripcion && (
+        <p className="mt-4 text-sm leading-6 text-gray-600 line-clamp-3">{e.descripcion}</p>
+      )}
+
+      <div className="mt-5 grid gap-3 text-sm text-gray-500">
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-secondary" />
+          <span>{formatDateTime(e.fecha_inicio)}</span>
+        </div>
+        {e.lugar && (
+          <div className="flex items-center gap-2">
+            <MapPin size={14} className="text-secondary" />
+            <span>{e.lugar}</span>
+          </div>
+        )}
+        {e.enlace_virtual && (
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-2 text-xs font-semibold text-primary">Enlace virtual</span>
+        )}
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -231,25 +340,77 @@ function EventCard({ e, onClick, past=false }) {
 // ============================================================
 export function DocentesPage() {
   const { data, isLoading } = useQuery({ queryKey:['docentes-pub'], queryFn:docentesService.getAll })
-  const list = data?.data?.data||[]
+  const list = data?.data?.data || []
+
   return (
-    <div className="section">
-      <div className="container-main">
-        <p className="eyebrow">Cuerpo académico</p><h1 className="section-title">Directorio de docentes</h1>
-        <p className="section-sub mb-8">Profesionales con experiencia en medios, investigación y comunicación.</p>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin docentes registrados"/> : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {list.map(d => (
-              <div key={d.id} className="card p-5 text-center hover:shadow-card-md transition-shadow">
-                <div className="w-20 h-20 rounded-full mx-auto mb-3 overflow-hidden bg-secondary-50 flex items-center justify-center">
-                  {d.foto_url ? <img src={d.foto_url} alt={d.nombre_completo} className="w-full h-full object-cover" onError={e=>e.target.style.display='none'}/> : <span className="text-2xl font-bold text-secondary">{d.nombre_completo.charAt(0)}</span>}
-                </div>
-                <p className="font-bold text-sm text-gray-800">{d.nombre_completo}</p>
-                {d.titulo_academico && <p className="text-primary text-xs font-semibold mt-0.5">{d.titulo_academico}</p>}
-                {d.especialidad && <p className="text-gray-500 text-xs mt-1 line-clamp-2">{d.especialidad}</p>}
-                {d.email && <a href={`mailto:${d.email}`} className="text-secondary text-xs hover:underline mt-1.5 block truncate">{d.email}</a>}
-                <div className="mt-2"><Badge color={d.tipo==='titular'?'#1A5276':'#C0392B'}>{d.tipo}</Badge></div>
+    <div className="section bg-secondary/5">
+      <div className="container-main max-w-6xl">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="eyebrow">Cuerpo académico</p>
+              <h1 className="section-title">Directorio de docentes</h1>
+              <p className="section-sub mt-3 text-gray-600">Profesionales con experiencia en medios, investigación y comunicación, listos para acompañarte en tu formación.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-3xl border border-primary/10 bg-primary/5 px-5 py-4 text-center">
+                <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Docentes activos</p>
+                <p className="mt-2 text-3xl font-bold text-primary">{list.length}</p>
               </div>
+              <div className="rounded-3xl border border-secondary/10 bg-secondary/5 px-5 py-4 text-center">
+                <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">Especialidades</p>
+                <p className="mt-2 text-3xl font-bold text-secondary">{[...new Set(list.map(d => d.especialidad).filter(Boolean))].length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin docentes registrados" />
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {list.map(d => (
+              <article key={d.id} className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white shadow-card-lg transition hover:-translate-y-1 hover:shadow-card-xl">
+                <div className="relative overflow-hidden bg-secondary/10">
+                  <div className="absolute inset-0 bg-gradient-to-br from-secondary/50 to-primary/20" />
+                  <div className="relative flex h-52 items-center justify-center">
+                    {d.foto_url ? (
+                      <img
+                        src={d.foto_url}
+                        alt={d.nombre_completo}
+                        className="h-full w-full object-cover"
+                        onError={e => (e.target.style.display = 'none')}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-4xl font-semibold text-white opacity-80">
+                        {d.nombre_completo?.charAt(0) || 'D'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 p-6 text-center">
+                  <p className="text-lg font-semibold text-gray-900 leading-tight">{d.nombre_completo}</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-secondary">{d.titulo_academico || 'Docente'}</p>
+                  {d.especialidad && <p className="text-sm text-gray-500 line-clamp-2">{d.especialidad}</p>}
+
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Badge color={d.tipo === 'titular' ? '#1A5276' : '#C0392B'}>{d.tipo}</Badge>
+                    {d.especialidad && <span className="rounded-full bg-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary">Área {d.especialidad}</span>}
+                  </div>
+
+                  {d.email && (
+                    <a
+                      href={`mailto:${d.email}`}
+                      className="inline-flex items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition hover:bg-primary/15"
+                    >
+                      {d.email}
+                    </a>
+                  )}
+                </div>
+              </article>
             ))}
           </div>
         )}
@@ -263,26 +424,103 @@ export function DocentesPage() {
 // ============================================================
 export function MejoresAlumnosPage() {
   const { data, isLoading } = useQuery({ queryKey:['alumnos-pub'], queryFn:()=>alumnosService.getAll({}) })
-  const list = data?.data?.data||[]
+  const list = data?.data?.data || []
+  const top = list.slice(0, 3)
   return (
-    <div className="section">
-      <div className="container-main max-w-3xl">
-        <p className="eyebrow">Excelencia académica</p><h1 className="section-title">Mejores estudiantes</h1>
-        <p className="section-sub mb-8">Reconocimiento semestral a los estudiantes destacados.</p>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin datos registrados"/> : (
-          <div className="space-y-3">
-            {list.map((a,i) => (
-              <div key={a.id} className="card p-4 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0 ${i===0?'bg-yellow-400':i===1?'bg-gray-400':i===2?'bg-yellow-700':'bg-secondary'}`}>{i+1}</div>
-                {a.foto_url && <img src={a.foto_url} alt={a.nombre_completo} className="w-12 h-12 rounded-full object-cover flex-shrink-0" onError={e=>e.target.style.display='none'}/>}
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800">{a.nombre_completo}</p>
-                  <p className="text-sm text-gray-500">Semestre {a.semestre_actual} · Gestión {a.gestion}</p>
-                  {a.logros && <p className="text-xs text-gray-400 mt-0.5">{a.logros}</p>}
+    <div className="section bg-secondary/5">
+      <div className="container-main max-w-6xl">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-2xl">
+            <p className="eyebrow">Excelencia académica</p>
+            <h1 className="section-title">Mejores estudiantes</h1>
+            <p className="section-sub mt-3 text-gray-600">Un reconocimiento claro a quienes lideran el rendimiento académico y representan el espíritu de la carrera.</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin datos registrados" />
+        ) : (
+          <div className="space-y-8">
+            <div className="grid gap-4 xl:grid-cols-3">
+              {top.map((a, i) => (
+                <div
+                  key={a.id}
+                  className="group rounded-[28px] border border-secondary/10 bg-white p-6 shadow-card-lg transition hover:-translate-y-1 hover:shadow-card-xl"
+                >
+                  <div className="flex items-center justify-between gap-4 pb-4 border-b border-secondary/10 mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.24em] text-primary/70">Ranking académico</p>
+                      <p className="mt-2 text-2xl font-bold text-gray-900">Puesto {i + 1}</p>
+                    </div>
+                    <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-semibold text-white ${i === 0 ? 'bg-primary' : i === 1 ? 'bg-secondary' : 'bg-yellow-700'}`}>
+                      {i + 1}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="relative overflow-hidden rounded-3xl bg-secondary/10 w-24 h-24 flex items-center justify-center">
+                      {a.foto_url ? (
+                        <img
+                          src={a.foto_url}
+                          alt={a.nombre_completo}
+                          className="h-full w-full object-cover"
+                          onError={ev => (ev.target.style.display = 'none')}
+                        />
+                      ) : (
+                        <span className="text-2xl font-bold text-secondary">{a.nombre_completo?.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl font-semibold text-gray-900 truncate">{a.nombre_completo}</p>
+                      <p className="mt-2 text-sm text-gray-500">Semestre {a.semestre_actual} · Gestión {a.gestion}</p>
+                      {a.logros && <p className="mt-3 text-sm text-gray-600 line-clamp-2">{a.logros}</p>}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 inline-flex items-center justify-between rounded-3xl bg-secondary/5 border border-secondary/10 px-4 py-3 text-sm">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Promedio</p>
+                      <p className="text-3xl font-bold text-primary">{a.promedio || '-'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Logro</p>
+                      <p className="text-sm font-semibold text-gray-700">{a.logros ? 'Contenido disponible' : 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0"><p className="text-2xl font-bold text-primary">{a.promedio}</p><p className="text-xs text-gray-400">promedio</p></div>
+              ))}
+            </div>
+
+            <div className="rounded-[32px] border border-secondary/10 bg-white p-6 shadow-card-lg">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.22em] text-secondary">Lista completa</p>
+                  <p className="text-lg font-semibold text-gray-900">Todos los estudiantes destacados</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+                  <Award className="h-4 w-4" /> Ranking oficial
+                </div>
               </div>
-            ))}
+
+              <div className="space-y-3">
+                {list.map((a, i) => (
+                  <div key={a.id} className="grid gap-4 rounded-3xl border border-secondary/10 bg-secondary/5 p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-semibold text-primary shadow-sm">{i + 1}</div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{a.nombre_completo}</p>
+                      <p className="text-sm text-gray-500 mt-1">Semestre {a.semestre_actual} · Gestión {a.gestion}</p>
+                      {a.logros && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{a.logros}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">{a.promedio || '-'}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-gray-400">Promedio</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -295,30 +533,79 @@ export function MejoresAlumnosPage() {
 // ============================================================
 export function EgresadosPage() {
   const { data, isLoading } = useQuery({ queryKey:['egresados-pub'], queryFn:egresadosService.getAll })
-  const list = data?.data?.data||[]
+  const list = data?.data?.data || []
   return (
-    <div className="section">
-      <div className="container-main">
-        <p className="eyebrow">Comunidad</p><h1 className="section-title">Egresados destacados</h1>
-        <p className="section-sub mb-8">Comunicadores que hacen historia en los medios y organizaciones de Bolivia.</p>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin egresados registrados"/> : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="section bg-secondary/5">
+      <div className="container-main max-w-6xl">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="eyebrow">Comunidad</p>
+              <h1 className="section-title">Egresados destacados</h1>
+              <p className="section-sub mt-3 text-gray-600">Historias de egresados que representan a la comunicación boliviana en medios, instituciones y emprendimientos.</p>
+            </div>
+            <div className="rounded-3xl border border-primary/10 bg-primary/5 px-6 py-5 text-right">
+              <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Red profesional</p>
+              <p className="mt-2 text-4xl font-bold text-primary">{list.length}</p>
+              <p className="text-sm text-gray-500">Egresados disponibles</p>
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin egresados registrados" />
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {list.map(e => (
-              <div key={e.id} className="card p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-secondary-50 flex-shrink-0 flex items-center justify-center">
-                    {e.foto_url ? <img src={e.foto_url} alt={e.nombre_completo} className="w-full h-full object-cover" onError={ev=>ev.target.style.display='none'}/> : <span className="text-xl font-bold text-secondary">{e.nombre_completo.charAt(0)}</span>}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800 leading-tight">{e.nombre_completo}</p>
-                    {e.anio_egreso && <p className="text-xs text-gray-400">Egresado {e.anio_egreso}</p>}
+              <article key={e.id} className="overflow-hidden rounded-[28px] border border-secondary/10 bg-white shadow-card-lg transition hover:-translate-y-1 hover:shadow-card-xl">
+                <div className="relative h-48 overflow-hidden bg-secondary/10">
+                  {e.foto_url ? (
+                    <img
+                      src={e.foto_url}
+                      alt={e.nombre_completo}
+                      className="h-full w-full object-cover"
+                      onError={ev => (ev.target.style.display = 'none')}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-4xl font-bold text-secondary">{e.nombre_completo?.charAt(0)}</div>
+                  )}
+                  <div className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-primary shadow-sm">
+                    Egresado
                   </div>
                 </div>
-                {e.ocupacion_actual && <p className="text-sm font-semibold text-primary">{e.ocupacion_actual}</p>}
-                {e.empresa_institucion && <p className="text-xs text-gray-500">{e.empresa_institucion}</p>}
-                {e.testimonio && <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-primary pl-2 line-clamp-3">"{e.testimonio}"</p>}
-                {e.linkedin_url && <a href={e.linkedin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-secondary text-xs hover:underline mt-2"><ExternalLink size={11}/> LinkedIn</a>}
-              </div>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary text-lg font-semibold">
+                      {e.nombre_completo?.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-lg font-semibold text-gray-900 truncate">{e.nombre_completo}</p>
+                      <p className="text-xs text-gray-500 mt-1">Egresado {e.anio_egreso || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {e.ocupacion_actual && <p className="text-sm font-semibold text-primary">{e.ocupacion_actual}</p>}
+                    {e.empresa_institucion && <p className="text-sm text-gray-500">{e.empresa_institucion}</p>}
+                  </div>
+
+                  {e.testimonio && (
+                    <p className="mt-5 text-sm leading-6 text-gray-600 line-clamp-3">"{e.testimonio}"</p>
+                  )}
+
+                  <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    {e.linkedin_url && (
+                      <a href={e.linkedin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-2 text-primary transition hover:bg-primary/10">
+                        <ExternalLink className="h-3.5 w-3.5" /> LinkedIn
+                      </a>
+                    )}
+                    <span className="rounded-full bg-secondary/10 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-secondary">{e.anio_egreso ? `Promoción ${e.anio_egreso}` : 'Promoción disponible'}</span>
+                  </div>
+                </div>
+              </article>
             ))}
           </div>
         )}
@@ -335,33 +622,99 @@ export function MultimediaPage() {
   const { data, isLoading } = useQuery({ queryKey:['multimedia-pub',tipo], queryFn:()=>multimediaService.getAll(tipo?{tipo}:{}) })
   const list  = data?.data?.data||[]
   const tipos = ['video','podcast','fotografia','reportaje','otro']
+  
   return (
-    <div className="section">
+    <div className="section bg-secondary/5">
       <div className="container-main">
-        <p className="eyebrow">Producción estudiantil</p><h1 className="section-title">Multimedia</h1>
-        <p className="section-sub mb-6">Trabajos producidos por estudiantes de la carrera.</p>
-        <div className="flex flex-wrap gap-2 mb-7">
-          <button onClick={()=>setTipo('')} className={`badge cursor-pointer px-3 py-1.5 text-xs font-semibold ${!tipo?'bg-primary text-white':'badge-gray hover:bg-gray-200'}`}>Todos</button>
-          {tipos.map(t=><button key={t} onClick={()=>setTipo(t)} className={`badge cursor-pointer px-3 py-1.5 text-xs font-semibold capitalize ${tipo===t?'bg-primary text-white':'badge-gray hover:bg-gray-200'}`}>{t}</button>)}
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Producción estudiantil</p>
+            <h1 className="section-title">Multimedia</h1>
+            <p className="section-sub mt-4 text-gray-600">Explora los trabajos producidos por estudiantes de la carrera: videos, podcasts, reportajes y fotografías que reflejan la creatividad y profesionalismo en acción.</p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Diversos formatos</span>
+              <span className="rounded-full border border-secondary/20 bg-secondary/10 px-3 py-2">Trabajos destacados</span>
+            </div>
+          </div>
         </div>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin trabajos publicados"/> : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {list.map(m=>{
-              const ytId  = m.url_contenido?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\n?#]+)/)?.[1]
-              const thumb = m.thumbnail_url||(ytId?`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`:null)
+
+        <div className="mb-10 flex flex-wrap gap-3">
+          <button 
+            onClick={() => setTipo('')} 
+            className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+              !tipo 
+                ? 'bg-primary text-white shadow-md' 
+                : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Todos
+          </button>
+          {tipos.map(t => (
+            <button 
+              key={t} 
+              onClick={() => setTipo(t)} 
+              className={`rounded-full px-5 py-2.5 text-sm font-semibold capitalize transition-all ${
+                tipo === t 
+                  ? 'bg-secondary text-white shadow-md' 
+                  : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin trabajos publicados" />
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {list.map(m => {
+              const ytId = m.url_contenido?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&\n?#]+)/)?.[1]
+              const thumb = m.thumbnail_url || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null)
               return (
-                <a key={m.id} href={m.url_contenido||'#'} target={m.url_contenido?'_blank':undefined} rel="noreferrer" className="group card overflow-hidden hover:shadow-card-md transition-all">
-                  <div className="relative h-44 bg-gray-900 overflow-hidden">
-                    {thumb ? <img src={thumb} alt={m.titulo} className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-all duration-500" onError={e=>e.target.style.display='none'}/> : <div className="w-full h-full bg-gradient-to-br from-secondary to-primary opacity-60"/>}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"><Play size={20} className="text-white ml-0.5" fill="white"/></div>
+                <a 
+                  key={m.id} 
+                  href={m.url_contenido || '#'} 
+                  target={m.url_contenido ? '_blank' : undefined} 
+                  rel="noreferrer" 
+                  className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card-md"
+                >
+                  <div className="relative h-48 bg-gray-900 overflow-hidden">
+                    {thumb ? (
+                      <img 
+                        src={thumb} 
+                        alt={m.titulo} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        onError={e => e.target.style.display = 'none'}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center">
+                        <Play size={32} className="text-white/40" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all duration-300 opacity-0 group-hover:opacity-100">
+                      <div className="w-14 h-14 bg-white/25 backdrop-blur-sm rounded-full flex items-center justify-center">
+                        <Play size={24} className="text-white ml-1" fill="white" />
+                      </div>
                     </div>
-                    <div className="absolute top-2 left-2"><span className="badge bg-primary text-white text-xs capitalize">{m.tipo}</span></div>
+                    <div className="absolute top-3 left-3">
+                      <span className="rounded-full bg-primary text-white text-xs font-bold px-3 py-1.5 capitalize">
+                        {m.tipo}
+                      </span>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <p className="font-semibold text-sm text-gray-800 line-clamp-2 group-hover:text-primary transition-colors leading-snug">{m.titulo}</p>
-                    <p className="text-xs text-gray-500 mt-1">Por {m.autor_nombre}</p>
-                    {m.materia_origen && <p className="text-xs text-gray-400">{m.materia_origen}</p>}
+                  <div className="p-5">
+                    <p className="font-semibold text-gray-900 line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+                      {m.titulo}
+                    </p>
+                    <div className="mt-3 space-y-2 text-xs text-gray-600">
+                      <p className="font-medium">Por {m.autor_nombre}</p>
+                      {m.materia_origen && (
+                        <p className="text-gray-500">{m.materia_origen}</p>
+                      )}
+                    </div>
                   </div>
                 </a>
               )
@@ -385,24 +738,66 @@ export function GaleriaPage() {
   const { data: imagenesData, isLoading: imgsLoading } = useQuery({ queryKey:['imagenes-pub',albumId], enabled:!!albumId, queryFn:()=>galeriaService.getImagenes(albumId) })
   const imagenes = imagenesData?.data?.data||[]
 
+  const totalImages = albumes.reduce((sum, a) => sum + (a.total_imagenes || 0), 0)
+
   return (
-    <div className="section">
-      <div className="container-main">
-        <p className="eyebrow">Fotografías</p><h1 className="section-title">Galería fotográfica</h1>
-        <p className="section-sub mb-8">Momentos de la vida académica de la carrera.</p>
+    <div className="section bg-secondary/5">
+      <div className="container-main max-w-7xl">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="eyebrow">Fotografías</p>
+              <h1 className="section-title">Galería fotográfica</h1>
+              <p className="section-sub mt-3 text-gray-600">Momentos de la vida académica de la carrera, capturados con estilo y ordenados por álbumes.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-3xl border border-primary/10 bg-primary/5 px-5 py-4 text-center">
+                <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Álbumes</p>
+                <p className="mt-2 text-3xl font-bold text-primary">{albumes.length}</p>
+              </div>
+              <div className="rounded-3xl border border-secondary/10 bg-secondary/5 px-5 py-4 text-center">
+                <p className="text-xs uppercase tracking-[0.22em] text-secondary/80">Fotos totales</p>
+                <p className="mt-2 text-3xl font-bold text-secondary">{totalImages}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {!albumId ? (
-          albumes.length===0 ? <EmptyState title="Sin álbumes publicados"/> : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {albumes.map(a=>(
-                <button key={a.id} onClick={()=>setAlbumId(a.id)} className="group card overflow-hidden text-left hover:shadow-card-md transition-all">
-                  <div className="h-48 bg-gray-100 overflow-hidden relative">
-                    {a.portada_url ? <img src={a.portada_url} alt={a.nombre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e=>e.target.style.display='none'}/> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">Sin portada</div>}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><span className="bg-white/90 text-secondary text-xs font-bold px-4 py-2 rounded-full">Ver fotos</span></div>
+          albumes.length===0 ? (
+            <EmptyState title="Sin álbumes publicados" />
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {albumes.map(a => (
+                <button
+                  key={a.id}
+                  onClick={() => setAlbumId(a.id)}
+                  className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white shadow-card-lg text-left transition hover:-translate-y-1 hover:shadow-card-xl"
+                >
+                  <div className="relative h-56 overflow-hidden bg-gray-100">
+                    {a.portada_url ? (
+                      <img
+                        src={a.portada_url}
+                        alt={a.nombre}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        onError={e => (e.target.style.display = 'none')}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-gray-300 text-sm">Sin portada</div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-4 left-4 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-secondary shadow-sm">
+                      Ver fotos
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <p className="font-bold text-gray-800">{a.nombre}</p>
-                    {a.descripcion && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{a.descripcion}</p>}
-                    <p className="text-xs text-gray-400 mt-1.5">{a.total_imagenes||0} fotografías</p>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-lg">{a.nombre}</p>
+                        {a.descripcion && <p className="text-sm text-gray-500 mt-2 line-clamp-2">{a.descripcion}</p>}
+                      </div>
+                      <span className="rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-secondary">{a.total_imagenes||0} fotos</span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -410,17 +805,47 @@ export function GaleriaPage() {
           )
         ) : (
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <button onClick={()=>setAlbumId(null)} className="btn btn-ghost btn-sm">← Todos los álbumes</button>
-              <div className="w-px h-5 bg-gray-200"/>
-              <div><h2 className="font-bold text-gray-800">{albumActual?.nombre}</h2>{albumActual?.descripcion && <p className="text-sm text-gray-500">{albumActual.descripcion}</p>}</div>
+            <div className="mb-8 grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center">
+              <button onClick={() => setAlbumId(null)} className="btn btn-ghost btn-sm">← Todos los álbumes</button>
+              <div className="rounded-[28px] border border-secondary/10 bg-white p-6 shadow-card-lg">
+                <h2 className="font-semibold text-gray-900 text-2xl">{albumActual?.nombre}</h2>
+                {albumActual?.descripcion && <p className="text-sm text-gray-500 mt-2">{albumActual.descripcion}</p>}
+                <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-500">
+                  <span className="rounded-full bg-secondary/10 px-3 py-2">{imagenes.length} imágenes</span>
+                  <span className="rounded-full bg-secondary/10 px-3 py-2">Álbum activo</span>
+                </div>
+              </div>
             </div>
-            {imgsLoading ? <LoadingCenter/> : imagenes.length===0 ? <EmptyState title="Sin imágenes en este álbum"/> : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {imagenes.map(img=>(
-                  <button key={img.id} onClick={()=>setLightbox(img)} className="group relative rounded-2xl overflow-hidden bg-gray-100 aspect-square">
-                    <img src={img.thumbnail_url||img.url} alt={img.titulo||''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e=>e.target.style.display='none'}/>
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"/>
+
+            {imgsLoading ? (
+              <LoadingCenter />
+            ) : imagenes.length===0 ? (
+              <EmptyState title="Sin imágenes en este álbum" />
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {imagenes.map(img => (
+                  <button
+                    key={img.id}
+                    onClick={() => setLightbox(img)}
+                    className="group overflow-hidden rounded-[28px] bg-white shadow-card-lg transition hover:-translate-y-1 hover:shadow-card-xl"
+                  >
+                    <div className="relative overflow-hidden aspect-[4/3] bg-gray-100">
+                      <img
+                        src={img.thumbnail_url || img.url}
+                        alt={img.titulo || ''}
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        onError={e => (e.target.style.display = 'none')}
+                      />
+                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="p-4">
+                      {img.titulo ? (
+                        <p className="font-semibold text-gray-900 truncate">{img.titulo}</p>
+                      ) : (
+                        <p className="font-semibold text-gray-900">Fotografía</p>
+                      )}
+                      {img.descripcion && <p className="text-sm text-gray-500 mt-2 line-clamp-2">{img.descripcion}</p>}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -428,11 +853,18 @@ export function GaleriaPage() {
           </div>
         )}
       </div>
+
       {lightbox && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={()=>setLightbox(null)}>
-          <div className="max-w-4xl max-h-full" onClick={e=>e.stopPropagation()}>
-            <img src={lightbox.url} alt={lightbox.titulo||''} className="max-w-full max-h-[85vh] object-contain rounded-xl"/>
-            {lightbox.titulo && <p className="text-white text-center mt-3 text-sm">{lightbox.titulo}</p>}
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <div className="max-w-5xl max-h-[92vh] w-full" onClick={e => e.stopPropagation()}>
+            <div className="overflow-hidden rounded-[32px] bg-black shadow-2xl">
+              <img
+                src={lightbox.url}
+                alt={lightbox.titulo || ''}
+                className="mx-auto max-h-[80vh] w-full object-contain"
+              />
+              {lightbox.titulo && <div className="border-t border-white/10 bg-black/80 px-5 py-4 text-center text-sm text-white">{lightbox.titulo}</div>}
+            </div>
           </div>
         </div>
       )}
@@ -601,29 +1033,67 @@ export function WhatsappPage() {
   const { data, isLoading } = useQuery({ queryKey:['wa-pub'], queryFn:whatsappService.getAll })
   const grupos = data?.data?.data||[]
   const bySemestre = grupos.reduce((acc,g)=>{ if(!acc[g.semestre]) acc[g.semestre]=[]; acc[g.semestre].push(g); return acc },{})
+  
   return (
-    <div className="section">
-      <div className="container-main max-w-3xl">
-        <p className="eyebrow">Comunicación estudiantil</p><h1 className="section-title">Grupos de WhatsApp</h1>
-        <p className="section-sub mb-8">Accede al grupo de WhatsApp de tu materia.</p>
-        {isLoading ? <LoadingCenter/> : Object.keys(bySemestre).length===0 ? <EmptyState title="Sin grupos registrados"/> : (
-          Object.entries(bySemestre).sort(([a],[b])=>+a-+b).map(([sem,gs])=>(
-            <div key={sem} className="mb-6">
-              <h2 className="text-sm font-bold text-secondary mb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs">{sem}</span>
-                Semestre {sem}
-              </h2>
-              <div className="space-y-2">
-                {gs.map(g=>(
-                  <a key={g.id} href={g.enlace_wa} target="_blank" rel="noreferrer"
-                    className="flex items-center justify-between card p-3.5 hover:border-green-400 hover:shadow-sm transition-all group">
-                    <div><p className="font-semibold text-sm text-gray-800 group-hover:text-green-700">{g.materia_nombre}</p><p className="text-xs text-gray-400">Gestión {g.gestion}</p></div>
-                    <span className="bg-green-500 hover:bg-green-600 text-white text-xs px-3.5 py-1.5 rounded-full font-semibold transition-colors flex-shrink-0">Unirse</span>
-                  </a>
-                ))}
-              </div>
+    <div className="section bg-secondary/5">
+      <div className="container-main">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Comunicación estudiantil</p>
+            <h1 className="section-title">Grupos de WhatsApp por materia</h1>
+            <p className="section-sub mt-4 text-gray-600">Conecta con tus compañeros en los grupos oficiales de WhatsApp de cada materia. Acceso directo, rápido y seguro.</p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
+              <span className="rounded-full border border-green-200 bg-green-50 px-3 py-2 text-green-700">Organizado por semestre</span>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Únete en 1 clic</span>
             </div>
-          ))
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : Object.keys(bySemestre).length === 0 ? (
+          <EmptyState title="Sin grupos registrados" />
+        ) : (
+          <div className="space-y-8">
+            {Object.entries(bySemestre)
+              .sort(([a], [b]) => +a - +b)
+              .map(([sem, gs]) => (
+                <div key={sem} className="rounded-[28px] border border-secondary/10 bg-white p-6 shadow-sm">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-white text-sm font-bold">
+                      {sem}
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">Semestre {sem}</h2>
+                      <p className="text-sm text-gray-500">{gs.length} grupo{gs.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {gs.map(g => (
+                      <a
+                        key={g.id}
+                        href={g.enlace_wa}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group overflow-hidden rounded-[24px] border border-green-100 bg-gradient-to-br from-green-50 to-white p-5 transition hover:-translate-y-1 hover:shadow-card-md"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-gray-900 leading-snug line-clamp-2 group-hover:text-green-700">
+                              {g.materia_nombre}
+                            </h3>
+                            <p className="mt-2 text-xs text-gray-500">Gestión {g.gestion}</p>
+                          </div>
+                          <div className="rounded-full bg-green-500 px-3 py-2 text-xs font-bold text-white group-hover:bg-green-600 transition-colors flex-shrink-0">
+                            Unirse
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
         )}
       </div>
     </div>
@@ -637,27 +1107,64 @@ export function MallaCurricularPage() {
   const [selected, setSelected] = useState(null)
   const { data, isLoading } = useQuery({ queryKey:['materias-pub'], queryFn:()=>materiasService.getAll('2023') })
   const materias = data?.data?.data||[]
-  const bySem = {}; for(let i=1;i<=10;i++) bySem[i]=materias.filter(m=>m.semestre===i)
+  const totalMaterias = materias.length
+  const totalConPrerrequisitos = materias.filter(m => m.prerrequisitos?.trim()).length
+  const bySem = {}
+  for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
+
   return (
-    <div className="section">
+    <div className="section bg-secondary/5">
       <div className="container-main">
-        <p className="eyebrow">Plan de estudios</p><h1 className="section-title">Malla curricular — Pensum 2023</h1>
-        <p className="section-sub mb-8">Plan de formación de la Carrera de Comunicación Social UMSA.</p>
-        {isLoading ? <LoadingCenter/> : (
+        <div className="rounded-[32px] border border-secondary/10 bg-white shadow-card-lg p-8 mb-10">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="eyebrow">Plan de estudios</p>
+              <h1 className="section-title">Malla curricular — Pensum 2023</h1>
+              <p className="section-sub mt-3 text-gray-600">Plan de formación de la Carrera de Comunicación Social UMSA.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-3xl bg-secondary/10 px-4 py-3 text-center text-sm font-semibold text-secondary">10 semestres</div>
+              <div className="rounded-3xl bg-primary/10 px-4 py-3 text-center text-sm font-semibold text-primary">{totalMaterias} materias</div>
+              <div className="rounded-3xl bg-secondary/10 px-4 py-3 text-center text-sm font-semibold text-secondary">{totalConPrerrequisitos} con prerrequisitos</div>
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : (
           <div className="overflow-x-auto pb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 min-w-[640px]">
-              {Object.entries(bySem).map(([sem,ms])=>(
-                <div key={sem}>
-                  <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Semestre {sem}</div>
-                  <div className="space-y-1.5">
-                    {ms.length===0 ? <div className="card p-3 text-center text-xs text-gray-300">—</div>
-                      : ms.map(m=>(
-                        <button key={m.id} onClick={()=>setSelected(m)} className="w-full card p-2.5 text-left hover:border-primary hover:shadow-sm transition-all border-l-2 border-gray-200">
-                          <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
-                          {m.creditos && <p className="text-xs text-gray-400 mt-0.5">{m.creditos} créditos</p>}
-                        </button>
-                      ))
-                    }
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 min-w-[700px]">
+              {Object.entries(bySem).map(([sem, ms]) => (
+                <div key={sem} className="rounded-[30px] overflow-hidden border border-secondary/10 bg-white shadow-sm">
+                  <div className="bg-secondary text-white text-center text-xs font-bold uppercase tracking-[0.18em] py-3 px-4">
+                    Semestre {sem}
+                  </div>
+                  <div className="space-y-3 p-4">
+                    {ms.length === 0 ? (
+                      <div className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-5 text-center text-sm text-gray-400">
+                        Sin materias registradas
+                      </div>
+                    ) : ms.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelected(m)}
+                        className="group w-full rounded-3xl border border-gray-200 bg-slate-50 p-4 text-left transition-all hover:border-primary/40 hover:bg-secondary/5 hover:shadow-card-md"
+                      >
+                        <div className="space-y-2">
+                          <p className="font-semibold text-sm text-gray-800 line-clamp-2 leading-snug">{m.nombre}</p>
+                          {m.area && <p className="text-xs text-gray-500">Área {m.area}</p>}
+                        </div>
+                        {m.prerrequisitos && (
+                          <div className="mt-3 flex flex-col gap-2">
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                              Requisitos
+                            </span>
+                            <p className="text-xs text-gray-500 line-clamp-2">{m.prerrequisitos}</p>
+                          </div>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -666,14 +1173,29 @@ export function MallaCurricularPage() {
         )}
       </div>
       {selected && (
-        <Modal open={!!selected} onClose={()=>setSelected(null)} title={selected.nombre} size="sm">
-          <div className="space-y-2 text-sm">
+        <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.nombre || 'Detalle de materia'} size="sm">
+          <div className="space-y-4 text-sm text-gray-700">
             <div className="grid grid-cols-2 gap-3">
-              <div><p className="text-xs text-gray-400">Semestre</p><p className="font-semibold">{selected.semestre}</p></div>
-              <div><p className="text-xs text-gray-400">Créditos</p><p className="font-semibold">{selected.creditos||'—'}</p></div>
-              <div><p className="text-xs text-gray-400">Área</p><p className="font-semibold">{selected.area||'—'}</p></div>
-              <div><p className="text-xs text-gray-400">Tipo</p><p className="font-semibold capitalize">{selected.tipo}</p></div>
+              <div>
+                <p className="text-xs text-gray-400">Semestre</p>
+                <p className="font-semibold text-gray-900">{selected.semestre}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Prerrequisitos</p>
+                <p className="font-semibold text-gray-900">{selected.prerrequisitos || '—'}</p>
+              </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-gray-400">Área</p>
+                <p className="font-semibold text-gray-900">{selected.area || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Tipo</p>
+                <p className="font-semibold capitalize text-gray-900">{selected.tipo || '—'}</p>
+              </div>
+            </div>
+            {selected.descripcion && <p className="text-sm text-gray-600">{selected.descripcion}</p>}
           </div>
         </Modal>
       )}
@@ -688,37 +1210,62 @@ export function TramitesPage() {
   const [selected, setSelected] = useState(null)
   const { data, isLoading } = useQuery({ queryKey:['tramites-pub'], queryFn:tramitesService.getAll })
   const list = data?.data?.data||[]
+
   return (
-    <div className="section">
-      <div className="container-main max-w-3xl">
-        <p className="eyebrow">Gestión académica</p><h1 className="section-title">Trámites académicos</h1>
-        <p className="section-sub mb-8">Guías para realizar gestiones en la carrera.</p>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin trámites registrados"/> : (
-          <div className="space-y-3">
-            {list.map(t=>(
-              <button key={t.id} onClick={()=>setSelected(t)} className="w-full card p-4 text-left hover:border-primary hover:shadow-sm transition-all group">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-gray-800 group-hover:text-primary transition-colors">{t.nombre}</p>
-                    {t.descripcion && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{t.descripcion}</p>}
-                    {t.contacto && <p className="text-xs text-secondary mt-1">Contacto: {t.contacto}</p>}
+    <div className="section bg-secondary/5">
+      <div className="container-main">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Gestión académica</p>
+            <h1 className="section-title">Trámites académicos</h1>
+            <p className="section-sub mt-4 text-gray-600">Encuentra el trámite que necesitas y accede rápidamente a los requisitos, formularios y contactos.</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin trámites registrados" />
+        ) : (
+          <div className="grid gap-5 lg:grid-cols-2">
+            {list.map(tramite => (
+              <button
+                key={tramite.id}
+                onClick={() => setSelected(tramite)}
+                className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-card-md"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors leading-snug">{tramite.nombre}</p>
+                    {tramite.descripcion && <p className="mt-3 text-sm leading-6 text-gray-600 line-clamp-3">{tramite.descripcion}</p>}
                   </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5"/>
+                  <div className="flex shrink-0 items-center justify-center rounded-3xl bg-secondary/10 px-3 py-2 text-sm font-semibold uppercase tracking-[0.18em] text-secondary">
+                    Trámite
+                  </div>
+                </div>
+                <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                  {tramite.contacto && <span className="rounded-full border border-secondary/10 bg-secondary/5 px-3 py-2">Contacto: {tramite.contacto}</span>}
+                  {tramite.archivo_url && <span className="rounded-full border border-primary/15 bg-primary/10 px-3 py-2 text-primary">Formulario disponible</span>}
                 </div>
               </button>
             ))}
           </div>
         )}
       </div>
+
       {selected && (
-        <Modal open={!!selected} onClose={()=>setSelected(null)} title={selected.nombre} size="md">
-          {selected.descripcion && <p className="text-gray-600 text-sm mb-4">{selected.descripcion}</p>}
-          {selected.contacto && <p className="text-sm text-secondary mb-4">Contacto: {selected.contacto}</p>}
-          {selected.archivo_url && (
-            <a href={selected.archivo_url} target="_blank" rel="noreferrer" download className="btn btn-primary btn-sm">
-              <Download size={14}/> Descargar formulario
-            </a>
-          )}
+        <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.nombre} size="md">
+          <div className="space-y-4 text-sm text-gray-700">
+            {selected.descripcion && <p>{selected.descripcion}</p>}
+            {selected.contacto && <p className="text-secondary">Contacto: {selected.contacto}</p>}
+            {selected.archivo_url ? (
+              <a href={selected.archivo_url} target="_blank" rel="noreferrer" download className="btn btn-primary btn-sm">
+                <Download size={14}/> Descargar formulario
+              </a>
+            ) : (
+              <p className="text-sm text-gray-500">No hay formulario disponible para este trámite.</p>
+            )}
+          </div>
         </Modal>
       )}
     </div>
@@ -737,46 +1284,59 @@ export function TransparenciaPage() {
   const tipoIcon  = { reglamento:'📋', resolucion:'📜', acta:'📝', convocatoria:'📢', informe:'📊', plan:'🗓️', otro:'📄' }
 
   return (
-    <div className="section">
-      <div className="container-main max-w-4xl">
-        <p className="eyebrow">Rendición de cuentas</p>
-        <h1 className="section-title">Transparencia institucional</h1>
-        <p className="section-sub mb-8">Documentos normativos, resoluciones e informes de la carrera.</p>
-
-        {isLoading ? <LoadingCenter/> : list.length===0 ? (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-4">📂</p>
-            <p className="font-semibold text-gray-700 text-base">Sin documentos publicados aún</p>
-            <p className="text-sm text-gray-400 mt-1">Los documentos de transparencia se publican periódicamente.</p>
+    <div className="overflow-hidden">
+      <div className="bg-secondary/5 py-16">
+        <div className="container-main rounded-[40px] border border-secondary/10 bg-white shadow-2xl p-10 lg:p-14">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.32em] text-secondary/80 mb-4">Rendición de cuentas · Carrera de Comunicación Social</p>
+            <h1 className="text-4xl font-black text-gray-900 sm:text-5xl">Transparencia institucional</h1>
+            <p className="mt-6 text-lg leading-8 text-gray-600">Accede directamente a los documentos oficiales, informes y resoluciones que sustentan la gestión académica y administrativa. Todo está aquí, sin distracciones.</p>
           </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {list.map(doc=>(
-              <div key={doc.id} className="card p-4 hover:shadow-card-md transition-shadow">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                    style={{background:`${tipoColor[doc.tipo]||'#7F8C8D'}15`}}>
-                    {tipoIcon[doc.tipo]||'📄'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-sm text-gray-800 leading-snug">{doc.titulo}</p>
-                      <Badge color={tipoColor[doc.tipo]||'#7F8C8D'}>{doc.tipo}</Badge>
+        </div>
+      </div>
+
+      <div className="section pb-20 pt-10">
+        <div className="container-main">
+          {isLoading ? (
+            <LoadingCenter />
+          ) : list.length === 0 ? (
+            <div className="rounded-[32px] border border-dashed border-gray-200 bg-white py-16 text-center shadow-sm">
+              <p className="text-5xl">📂</p>
+              <p className="mt-4 text-xl font-semibold text-gray-800">Sin documentos publicados aún</p>
+              <p className="mt-2 text-sm text-gray-500">Los materiales de transparencia se publican periódicamente en este espacio.</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 lg:grid-cols-2">
+              {list.map(doc => (
+                <div key={doc.id} className="group overflow-hidden rounded-[32px] border border-secondary/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-card-lg">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-3xl text-2xl" style={{ backgroundColor: `${tipoColor[doc.tipo] || '#7F8C8D'}20` }}>
+                        {tipoIcon[doc.tipo] || '📄'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{doc.titulo}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{doc.tipo || 'Otro'}</p>
+                      </div>
                     </div>
-                    {doc.descripcion && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{doc.descripcion}</p>}
-                    <p className="text-xs text-gray-400 mt-1">{formatDate(doc.publicado_en)}</p>
+                    <span className="rounded-full bg-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary">{formatDate(doc.publicado_en)}</span>
+                  </div>
+
+                  {doc.descripcion && <p className="mt-4 text-sm leading-6 text-gray-600">{doc.descripcion}</p>}
+
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
                     {doc.archivo_url && (
-                      <a href={doc.archivo_url} target="_blank" rel="noreferrer" download
-                        className="inline-flex items-center gap-1 text-xs text-secondary hover:underline mt-2 font-medium">
-                        <Download size={11}/> Descargar documento
+                      <a href={doc.archivo_url} target="_blank" rel="noreferrer" download className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-4 py-2 text-sm font-semibold text-secondary transition hover:bg-secondary/15">
+                        <Download size={14}/> Descargar
                       </a>
                     )}
+                    <span className="rounded-full border border-secondary/10 bg-secondary/5 px-4 py-2 text-sm text-gray-500">ID {doc.id}</span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -788,25 +1348,49 @@ export function TransparenciaPage() {
 export function ConvocatoriasPage() {
   const { data, isLoading } = useQuery({ queryKey:['conv-pub'], queryFn:convocatoriasService.getAll })
   const list = data?.data?.data||[]
+
   return (
-    <div className="section">
-      <div className="container-main max-w-3xl">
-        <p className="eyebrow">Oportunidades</p><h1 className="section-title">Convocatorias</h1>
-        <p className="section-sub mb-8">Pasantías, docentes, investigación y becas disponibles.</p>
-        {isLoading ? <LoadingCenter/> : list.length===0 ? <EmptyState title="Sin convocatorias activas"/> : (
-          <div className="space-y-4">
-            {list.map(c=>(
-              <div key={c.id} className="card p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <Badge color="#C0392B">{c.tipo}</Badge>
-                    <h2 className="font-bold text-gray-800 mt-1.5 text-base">{c.titulo}</h2>
-                    {c.fecha_limite && <p className="text-xs text-primary font-semibold mt-0.5 flex items-center gap-1"><Clock size={11}/> Hasta el {formatDate(c.fecha_limite)}</p>}
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">{truncate(c.descripcion,250)}</p>
+    <div className="section bg-secondary/5">
+      <div className="container-main">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Oportunidades</p>
+            <h1 className="section-title">Convocatorias abiertas</h1>
+            <p className="section-sub mt-4 text-gray-600">Descubre pasantías, convocatorias docentes, becas e investigación con la información clara y accesible.</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <LoadingCenter />
+        ) : list.length === 0 ? (
+          <EmptyState title="Sin convocatorias activas" />
+        ) : (
+          <div className="grid gap-5 xl:grid-cols-2">
+            {list.map(conv => (
+              <div key={conv.id} className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-card-md">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <Badge color="#C0392B" className="uppercase text-[11px] tracking-[0.2em]">{conv.tipo}</Badge>
+                    <h2 className="mt-4 text-lg font-semibold text-gray-900 leading-snug">{conv.titulo}</h2>
                   </div>
-                  {c.archivo_url && (
-                    <a href={c.archivo_url} target="_blank" rel="noreferrer" download className="btn btn-outline btn-sm flex-shrink-0"><Download size={13}/> Descargar</a>
+                  {conv.fecha_limite && (
+                    <div className="rounded-3xl bg-secondary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
+                      Cierra el {formatDate(conv.fecha_limite)}
+                    </div>
                   )}
+                </div>
+
+                <p className="mt-4 text-sm leading-6 text-gray-600">{truncate(conv.descripcion, 220)}</p>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  {conv.archivo_url ? (
+                    <a href={conv.archivo_url} target="_blank" rel="noreferrer" download className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15">
+                      <Download size={14}/> Descargar bases
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-500">Sin archivo adjunto</span>
+                  )}
+                  <a href="#participa" className="text-sm font-semibold text-secondary hover:underline">Cómo postular</a>
                 </div>
               </div>
             ))}
@@ -832,58 +1416,99 @@ export function ContactoPage() {
     }
   }
   return (
-    <div className="section">
-      <div className="container-main">
-        <div className="grid lg:grid-cols-2 gap-12 max-w-5xl">
-          <div>
+    <div className="section bg-secondary/5">
+      <div className="container-main max-w-6xl">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-2xl">
             <p className="eyebrow">Comunícate con nosotros</p>
             <h1 className="section-title">Contacto</h1>
-            <div className="space-y-4 text-sm text-gray-600 mt-6">
-              {[
-                {icon:<MapPin size={15} className="text-primary flex-shrink-0 mt-0.5"/>, label:'Dirección', val:'Edificio René Zavaleta, Piso 5\nCalle Federizo Suazo, La Paz, Bolivia'},
-                {icon:<Phone size={15} className="text-primary flex-shrink-0"/>, label:'Teléfonos', val:'(591-2) 2911880 · (591-2) 2911890'},
-                {icon:<Mail size={15} className="text-primary flex-shrink-0"/>, label:'Correo', val:'comunicasocialumsa@gmail.com'},
-                {icon:<Globe size={15} className="text-primary flex-shrink-0"/>, label:'Web', val:'comunicacion.umsa.bo'},
-              ].map(({icon,label,val})=>(
-                <div key={label} className="flex gap-3">
-                  <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">{icon}</div>
-                  <div><p className="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-0.5">{label}</p><p className="whitespace-pre-line">{val}</p></div>
-                </div>
-              ))}
+            <p className="section-sub mt-4 text-gray-600">Escríbenos tus dudas, sugerencias o consultas. Nuestro equipo responderá lo más pronto posible.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-secondary/10 bg-white p-8 shadow-card-lg">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { icon: <MapPin size={18} className="text-primary" />, title: 'Dirección', value: 'Edificio René Zavaleta, Piso 5\nCalle Federizo Suazo, La Paz, Bolivia' },
+                  { icon: <Phone size={18} className="text-primary" />, title: 'Teléfonos', value: '(591-2) 2911880 · (591-2) 2911890' },
+                  { icon: <Mail size={18} className="text-primary" />, title: 'Correo', value: 'comunicasocialumsa@gmail.com' },
+                  { icon: <Globe size={18} className="text-primary" />, title: 'Sitio web', value: 'comunicacion.umsa.bo' },
+                ].map(item => (
+                  <div key={item.title} className="flex gap-4 rounded-3xl border border-secondary/10 bg-secondary/5 p-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-primary/10 text-primary">{item.icon}</div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">{item.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-gray-700 whitespace-pre-line">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-6 rounded-2xl overflow-hidden border border-gray-100">
-              <iframe title="Ubicación CCS UMSA" src="https://maps.google.com/maps?q=-16.505857,-68.127117&z=16&output=embed" className="w-full h-44" loading="lazy"/>
+
+            <div className="overflow-hidden rounded-[32px] border border-secondary/10 shadow-card-lg">
+              <div className="bg-primary/5 px-6 py-5">
+                <p className="text-sm uppercase tracking-[0.22em] text-primary">Nuestra ubicación</p>
+                <p className="mt-2 text-gray-600 text-sm">Visítanos en el campus para consultas presenciales o inicia tu contacto aquí mismo.</p>
+              </div>
+              <iframe
+                title="Ubicación CCS UMSA"
+                src="https://maps.google.com/maps?q=-16.505857,-68.127117&z=16&output=embed"
+                className="w-full h-72"
+                loading="lazy"
+              />
             </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-5">Envíanos un mensaje</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="label">Nombre completo *</label>
-                <input className="input" {...register('nombre',{required:'Requerido'})}/>
-                {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
+
+          <div className="rounded-[32px] border border-secondary/10 bg-white p-8 shadow-card-lg">
+            <div className="mb-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-secondary">Formulario de contacto</p>
+              <h2 className="mt-3 text-3xl font-semibold text-gray-900">Escribe tu mensaje</h2>
+              <p className="mt-3 text-sm text-gray-600">Cuéntanos qué necesitas y te daremos una respuesta rápida y personalizada.</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="label">Nombre completo *</label>
+                  <input className="input" {...register('nombre', { required: 'Requerido' })} />
+                  {errors.nombre && <p className="text-red-500 text-xs mt-2">{errors.nombre.message}</p>}
+                </div>
+                <div>
+                  <label className="label">Correo electrónico *</label>
+                  <input className="input" type="email" {...register('email', { required: 'Requerido' })} />
+                  {errors.email && <p className="text-red-500 text-xs mt-2">{errors.email.message}</p>}
+                </div>
               </div>
-              <div>
-                <label className="label">Correo electrónico *</label>
-                <input className="input" type="email" {...register('email',{required:'Requerido'})}/>
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-              </div>
+
               <div>
                 <label className="label">Asunto</label>
-                <input className="input" {...register('asunto')}/>
+                <input className="input" {...register('asunto')} />
               </div>
+
               <div>
                 <label className="label">Mensaje *</label>
-                <textarea className="input h-32 resize-none" {...register('mensaje',{required:'Requerido'})}/>
-                {errors.mensaje && <p className="text-red-500 text-xs mt-1">{errors.mensaje.message}</p>}
+                <textarea className="input h-36 resize-none" {...register('mensaje', { required: 'Requerido' })} />
+                {errors.mensaje && <p className="text-red-500 text-xs mt-2">{errors.mensaje.message}</p>}
               </div>
+
               <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full py-3">
-                {isSubmitting
-                  ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Enviando...</span>
-                  : <><Send size={16}/> Enviar mensaje</>
-                }
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Enviando...
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center justify-center gap-2"><Send size={16} /> Enviar mensaje</span>
+                )}
               </button>
             </form>
+
+            <div className="mt-8 rounded-[28px] border border-secondary/10 bg-secondary/5 p-5 text-sm text-gray-600">
+              <p className="font-semibold text-gray-900">Consejo rápido</p>
+              <p className="mt-2">Incluye tu nombre, correo y un resumen breve del motivo. Así podemos atender tu solicitud con mayor rapidez.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -895,14 +1520,77 @@ export function ContactoPage() {
 // BIBLIOTECA
 // ============================================================
 export function BibliotecaPage() {
+  const recursos = [
+    { icon:'📚', title:'Libros y referencias', desc:'Colección especializada en comunicación social, periodismo, semiótica y ciencias sociales.' },
+    { icon:'📰', title:'Revistas académicas', desc:'Publicaciones indexadas sobre investigación en comunicación y medios.' },
+    { icon:'📄', title:'Tesis y trabajos', desc:'Repositorio de investigaciones de postgrado y trabajos de grado de la carrera.' },
+    { icon:'🔗', title:'Bases de datos', desc:'Acceso a plataformas de investigación académica y artículos científicos internacionales.' },
+  ]
+
   return (
-    <div className="section">
-      <div className="container-main max-w-2xl text-center">
-        <p className="eyebrow">Recursos académicos</p><h1 className="section-title">Biblioteca digital</h1>
-        <p className="section-sub max-w-md mx-auto mb-8">Accede a libros, revistas y recursos de investigación de la UMSA.</p>
-        <a href="https://bibliotecas.umsa.bo" target="_blank" rel="noreferrer" className="btn btn-primary btn-lg">
-          Ir a la biblioteca virtual de la UMSA <ExternalLink size={17}/>
-        </a>
+    <div className="section bg-secondary/5">
+      <div className="container-main">
+        <div className="rounded-[32px] border border-secondary/10 bg-white p-10 shadow-card-lg mb-10">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Recursos académicos</p>
+            <h1 className="section-title">Biblioteca digital UMSA</h1>
+            <p className="section-sub mt-4 text-gray-600">Accede a miles de recursos: libros, revistas académicas, tesis y bases de datos especializadas para tu investigación y aprendizaje.</p>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700">Acceso 24/7</span>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Recursos especializados</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-[1fr_1.3fr] mb-10">
+          <div className="rounded-[28px] border border-secondary/10 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">¿Qué encontrarás?</h2>
+            <div className="space-y-4">
+              {recursos.map(({ icon, title, desc }) => (
+                <div key={title} className="flex gap-3">
+                  <span className="text-2xl flex-shrink-0">{icon}</span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-sm">{title}</p>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-secondary/10 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Acceso rápido</h2>
+            <div className="space-y-4">
+              <div className="rounded-[24px] border border-blue-100 bg-blue-50 p-6">
+                <p className="text-sm text-gray-600 mb-4">Entra a la biblioteca virtual con tu cuenta UMSA y explora miles de recursos académicos.</p>
+                <a href="https://bibliotecas.umsa.bo" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-blue-600 text-white px-6 py-3 text-sm font-semibold hover:bg-blue-700 transition-colors">
+                  Abrir biblioteca virtual <ExternalLink size={15} />
+                </a>
+              </div>
+              <div className="rounded-[24px] border border-secondary/10 bg-secondary/5 p-6">
+                <p className="text-xs text-gray-600 uppercase tracking-[0.18em] font-semibold mb-2 text-secondary">Horario de atención</p>
+                <p className="text-sm text-gray-900 font-semibold">Lunes a viernes: 8:00 a.m. - 6:00 p.m.</p>
+                <p className="text-sm text-gray-600 mt-1">Sábados: 9:00 a.m. - 1:00 p.m.</p>
+                <p className="text-xs text-gray-500 mt-3">Ubicación: Edificio René Zavaleta, Planta Baja</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-secondary/10 bg-white p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">¿Necesitas ayuda?</h2>
+          <p className="text-gray-600 text-sm mb-6">El equipo de la biblioteca digital está disponible para atender consultas sobre acceso, búsqueda de recursos y orientación académica.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[24px] border border-gray-100 bg-gray-50 p-5">
+              <p className="text-xs text-gray-500 uppercase tracking-[0.18em] font-semibold mb-2">Correo de contacto</p>
+              <a href="mailto:biblioteca@umsa.bo" className="text-sm font-semibold text-secondary hover:underline">biblioteca@umsa.bo</a>
+            </div>
+            <div className="rounded-[24px] border border-gray-100 bg-gray-50 p-5">
+              <p className="text-xs text-gray-500 uppercase tracking-[0.18em] font-semibold mb-2">Teléfono</p>
+              <a href="tel:+591229118800" className="text-sm font-semibold text-secondary hover:underline">(591-2) 2911880</a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -915,40 +1603,88 @@ export function IpicomPage() {
   const areas = [
     { icon:'🔬', title:'Investigación', desc:'Proyectos activos sobre comunicación, medios y sociedad boliviana. Publicaciones anuales con resultados de investigación.', color:'bg-secondary', link:'https://ipicom.umsa.bo' },
     { icon:'🎓', title:'Posgrado', desc:'Maestría en Comunicación Social. Programa de alta especialización para profesionales en ejercicio.', color:'bg-primary', link:'https://ipicom.umsa.bo/posgrado' },
-    { icon:'🤝', title:'Interacción Social', desc:'Proyectos de extensión universitaria. Vinculación de la carrera con comunidades y organizaciones sociales.', color:'bg-green-600', link:'https://ipicom.umsa.bo' },
-    { icon:'📚', title:'Publicaciones', desc:'Revista académica indexada, libros y compilaciones de investigaciones en comunicación y ciencias sociales.', color:'bg-indigo-600', link:'https://ipicom.umsa.bo/publicaciones' },
-    { icon:'🏛️', title:'Biblioteca especializada', desc:'Colección de textos especializados en comunicación, periodismo, semiótica y ciencias sociales.', color:'bg-amber-600', link:'https://bibliotecas.umsa.bo' },
+    { icon:'🤝', title:'Interacción Social', desc:'Proyectos de extensión universitaria. Vinculación de la carrera con comunidades y organizaciones sociales.', color:'bg-secondary/80', link:'https://ipicom.umsa.bo' },
+    { icon:'📚', title:'Publicaciones', desc:'Revista académica indexada, libros y compilaciones de investigaciones en comunicación y ciencias sociales.', color:'bg-blue-800', link:'https://ipicom.umsa.bo/publicaciones' },
+    { icon:'🏛️', title:'Biblioteca especializada', desc:'Colección de textos especializados en comunicación, periodismo, semiótica y ciencias sociales.', color:'bg-amber-500', link:'https://bibliotecas.umsa.bo' },
     { icon:'🌐', title:'Cooperación internacional', desc:'Convenios con universidades y centros de investigación de América Latina y Europa.', color:'bg-teal-600', link:'https://ipicom.umsa.bo' },
   ]
+
   return (
-    <div>
-      {/* Hero */}
-      <div className="bg-secondary py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-dots opacity-10"/>
-        <div className="container-main relative text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-300 mb-3">Carrera de Comunicación Social · UMSA</p>
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4">Instituto de Investigación,<br/>Posgrado e Interacción Social</h1>
-          <p className="text-blue-100/80 text-lg max-w-2xl mx-auto mb-8">IpICOM es la unidad académica encargada de la investigación científica, formación de posgrado y extensión social de la carrera.</p>
-          <a href="https://ipicom.umsa.bo" target="_blank" rel="noreferrer" className="btn btn-white btn-lg">
-            Visitar ipicom.umsa.bo <ExternalLink size={16}/>
-          </a>
+    <div className="overflow-hidden">
+      <div className="bg-secondary px-4 py-16 sm:px-6 lg:px-8">
+        <div className="container-main relative rounded-[40px] border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
+          <div className="absolute -right-16 top-12 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+          <div className="absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 rounded-full bg-white/10 blur-2xl" />
+          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-100/70 mb-4">Carrera de Comunicación Social · UMSA</p>
+              <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">IpICOM: investigación, posgrado e interacción social</h1>
+              <p className="mt-6 max-w-2xl text-lg text-blue-100/85 leading-8">El Instituto de Investigación, Posgrado e Interacción Social impulsa proyectos académicos, publicaciones especializadas y programas de formación avanzados para los comunicadores del país.</p>
+              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <a href="https://ipicom.umsa.bo" target="_blank" rel="noreferrer" className="btn btn-white btn-lg inline-flex items-center justify-center gap-2">
+                  Visitar IpICOM <ExternalLink size={16}/>
+                </a>
+                <a href="#areas" className="btn btn-primary btn-lg bg-white/10 text-white hover:bg-white/20 border border-white/20">
+                  Ver áreas clave
+                </a>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-white/10 bg-slate-950/80 p-8 text-white shadow-2xl">
+              <div className="mb-6 rounded-3xl bg-white/5 p-6">
+                <p className="text-xs uppercase tracking-[0.24em] text-blue-100/70">Impacto reciente</p>
+                <h2 className="mt-4 text-2xl font-bold">+120 proyectos</h2>
+                <p className="mt-2 text-sm text-blue-100/75 leading-relaxed">Investigación, extensión y formación de postgrado en comunicación social.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-3xl bg-white/5 p-5">
+                  <p className="text-3xl font-black text-white">24</p>
+                  <p className="mt-2 text-sm text-blue-100/70">Años de experiencia en investigación</p>
+                </div>
+                <div className="rounded-3xl bg-white/5 p-5">
+                  <p className="text-3xl font-black text-white">8</p>
+                  <p className="mt-2 text-sm text-blue-100/70">Programas de posgrado y diplomados</p>
+                </div>
+                <div className="rounded-3xl bg-white/5 p-5">
+                  <p className="text-3xl font-black text-white">300+</p>
+                  <p className="mt-2 text-sm text-blue-100/70">Publicaciones académicas y proyectos sociales</p>
+                </div>
+                <div className="rounded-3xl bg-white/5 p-5">
+                  <p className="text-3xl font-black text-white">20</p>
+                  <p className="mt-2 text-sm text-blue-100/70">Convenios con socios nacionales e internacionales</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Áreas */}
-      <div className="section">
+      <div className="section pb-16 pt-12">
         <div className="container-main">
           <div className="text-center mb-10">
             <p className="eyebrow">Nuestras áreas</p>
             <h2 className="section-title">¿Qué hace IpICOM?</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-500">Cada área está diseñada para fortalecer la formación académica, la investigación aplicada y el vínculo con la sociedad.</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {areas.map(({icon,title,desc,color,link})=>(
-              <a key={title} href={link} target="_blank" rel="noreferrer" className="card p-6 group hover:shadow-card-md transition-shadow">
-                <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}>{icon}</div>
-                <h3 className="font-bold text-gray-900 text-base mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                <p className="text-xs text-secondary mt-3 group-hover:underline flex items-center gap-1">Ver más <ArrowRight size={11}/></p>
+
+          <div id="areas" className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {areas.map(({ icon, title, desc, color, link }) => (
+              <a
+                key={title}
+                href={link}
+                target="_blank"
+                rel="noreferrer"
+                className="group overflow-hidden rounded-[28px] border border-secondary/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-card-lg"
+              >
+                <div className={`flex h-14 w-14 items-center justify-center rounded-3xl text-2xl text-white ${color}`}>
+                  {icon}
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-gray-900">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-500">{desc}</p>
+                <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-secondary transition group-hover:text-secondary/90">
+                  <span>Ver más</span>
+                  <ArrowRight size={14}/>
+                </div>
               </a>
             ))}
           </div>

@@ -36,7 +36,7 @@ const COLS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-secondary mt-auto">
+    <footer className="bg-secondary/95 backdrop-blur-sm border-t border-white/10 mt-auto">
       <div className="h-0.5 bg-primary" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
@@ -56,23 +56,23 @@ export default function Footer() {
             <p className="text-blue-200/70 text-sm leading-relaxed mb-5">
               Formando comunicadores comprometidos con la realidad boliviana desde 1984.
             </p>
-            <div className="space-y-2.5 text-sm text-blue-200/80">
+            <div className="space-y-2.5 text-sm text-blue-100/80">
               <div className="flex items-start gap-2.5">
-                <MapPin size={15} className="text-blue-300 flex-shrink-0 mt-0.5" />
+                <MapPin size={15} className="text-blue-200 flex-shrink-0 mt-0.5" />
                 <span>Edificio René Zavaleta, Piso 5<br />Calle Federizo Suazo, La Paz</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Phone size={15} className="text-blue-300 flex-shrink-0" />
+                <Phone size={15} className="text-blue-200 flex-shrink-0" />
                 <span>(591-2) 2911880 · 2911890</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Mail size={15} className="text-blue-300 flex-shrink-0" />
+                <Mail size={15} className="text-blue-200 flex-shrink-0" />
                 <span>comunicasocialumsa@gmail.com</span>
               </div>
               <div className="flex items-center gap-2.5">
-                <Globe size={15} className="text-blue-300 flex-shrink-0" />
+                <Globe size={15} className="text-blue-200 flex-shrink-0" />
                 <a href="https://comunicacion.umsa.bo" target="_blank" rel="noreferrer"
-                   className="hover:text-white transition-colors">comunicacion.umsa.bo</a>
+                   className="text-blue-100/80 hover:text-white transition-colors">comunicacion.umsa.bo</a>
               </div>
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function Footer() {
               <ul className="space-y-2">
                 {col.links.map(l => (
                   <li key={l.to}>
-                    <Link to={l.to} className="text-sm text-blue-200/70 hover:text-white transition-colors">
+                    <Link to={l.to} className="text-sm text-blue-100/80 hover:text-white transition-colors">
                       {l.label}
                     </Link>
                   </li>
@@ -97,15 +97,15 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-blue-300/60 text-xs">
+          <p className="text-blue-200/70 text-xs">
             © {new Date().getFullYear()} Carrera de Ciencias de la Comunicación Social — UMSA. La Paz, Bolivia.
           </p>
           <div className="flex gap-4">
             <a href="https://www.facebook.com/comunicacion.umsa.bo" target="_blank" rel="noreferrer"
-               className="text-blue-300/60 hover:text-white text-xs transition-colors">Facebook</a>
+               className="text-blue-100/70 hover:text-white text-xs transition-colors">Facebook</a>
             <a href="https://tiktok.com/@comunicacion_social_umsa" target="_blank" rel="noreferrer"
-               className="text-blue-300/60 hover:text-white text-xs transition-colors">TikTok</a>
-            <Link to="/admin" className="text-blue-300/60 hover:text-white text-xs transition-colors">Panel Admin</Link>
+               className="text-blue-100/70 hover:text-white text-xs transition-colors">TikTok</a>
+            <Link to="/admin" className="text-blue-100/70 hover:text-white text-xs transition-colors">Panel Admin</Link>
           </div>
         </div>
       </div>

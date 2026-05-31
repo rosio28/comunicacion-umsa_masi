@@ -1108,7 +1108,7 @@ export function AdminMallaPage() {
   const bySem = {}; for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
   const { register: rE, handleSubmit: hE, reset: resetE } = useForm()
   const { register: rN, handleSubmit: hN, reset: resetN } = useForm()
-  useEffect(() => { if (editing) resetE({ nombre: editing.nombre, creditos: editing.creditos || '', area: editing.area || '', tipo: editing.tipo || 'obligatoria' }) }, [editing, resetE])
+  useEffect(() => { if (editing) resetE({ nombre: editing.nombre, prerrequisitos: editing.prerrequisitos || '', area: editing.area || '', tipo: editing.tipo || 'obligatoria' }) }, [editing, resetE])
   const editMut = useMutation({ mutationFn: ({ id, ...d }) => materiasService.update(id, d), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Actualizada'); setEditing(null) } })
   const newMut  = useMutation({ mutationFn: d => api.post('/materias', d), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Creada'); setNewModal(false); resetN() } })
   const delMut  = useMutation({ mutationFn: id => api.delete(`/materias/${id}`), onSuccess: () => { qc.invalidateQueries(['mat-admin']); toast.success('Desactivada') } })
@@ -1129,7 +1129,7 @@ export function AdminMallaPage() {
                     : ms.map(m => (
                       <div key={m.id} className="card p-2.5 group hover:border-primary transition-colors cursor-pointer" onClick={() => setEditing(m)}>
                         <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
-                        {m.creditos && <p className="text-xs text-gray-400 mt-0.5">{m.creditos} cred.</p>}
+                        {m.prerrequisitos && <p className="text-xs text-gray-400 mt-0.5">{m.prerrequisitos}</p>}
                         <div className="flex gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <span className="text-secondary text-xs">Editar</span>
                           <button onClick={e => { e.stopPropagation(); setConfirmId(m.id) }} className="text-red-400 text-xs ml-auto">Quitar</button>
@@ -1149,7 +1149,10 @@ export function AdminMallaPage() {
           <form onSubmit={hE(d => editMut.mutate({ id: editing.id, ...d }))} className="space-y-3">
             <div><label className="label">Nombre</label><input className="input" {...rE('nombre')}/></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">Créditos</label><input className="input" type="number" {...rE('creditos')}/></div>
+              <div>
+                <label className="label">Prerrequisitos</label>
+                <textarea className="input h-24 resize-none" {...rE('prerrequisitos')}/>
+              </div>
               <div><label className="label">Tipo</label><select className="input" {...rE('tipo')}><option value="obligatoria">Obligatoria</option><option value="electiva">Electiva</option><option value="taller">Taller</option></select></div>
             </div>
             <div><label className="label">Área temática</label><input className="input" {...rE('area')}/></div>
@@ -1162,7 +1165,10 @@ export function AdminMallaPage() {
           <div><label className="label">Nombre *</label><input className="input" {...rN('nombre', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })}/></div>
-            <div><label className="label">Créditos</label><input className="input" type="number" {...rN('creditos')}/></div>
+            <div>
+              <label className="label">Prerrequisitos</label>
+              <textarea className="input h-24 resize-none" {...rN('prerrequisitos')}/>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Área</label><input className="input" {...rN('area')}/></div>

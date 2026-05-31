@@ -88,8 +88,8 @@ export default function Navbar() {
     <>
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-secondary/98 backdrop-blur-md shadow-lg'
-          : 'bg-secondary'
+          ? 'bg-secondary/40 backdrop-blur-md shadow-md border-b border-white/10'
+          : 'bg-secondary/100 backdrop-blur-sm shadow-xl border-b border-white/5'
       }`}>
         {/* Top stripe */}
         <div className="h-0.5 bg-gradient-to-r from-primary via-primary-light to-primary" />
@@ -144,8 +144,8 @@ export default function Navbar() {
             {/* CTA + hamburger */}
             <div className="flex items-center gap-2">
               <Link to="/admin"
-                className="hidden sm:inline-flex btn btn-primary btn-sm">
-                Panel Admin
+                className="hidden sm:inline-flex btn btn-primary btn-sm min-w-[120px] justify-center">
+                Panel
               </Link>
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -172,7 +172,7 @@ export default function Navbar() {
                onClick={() => setMobileOpen(false)} />
 
           {/* Menu panel */}
-          <div className="relative bg-secondary h-full overflow-y-auto mobile-menu"
+          <div className="relative bg-secondary/98 backdrop-blur-xl h-full overflow-y-auto mobile-menu"
                style={{ maxHeight: 'calc(100vh - 66px)' }}>
             <div className="px-4 py-4 space-y-1">
 
