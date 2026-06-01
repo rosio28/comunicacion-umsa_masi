@@ -19,7 +19,7 @@ const MENUS = [
       { to: '/tramites',      label: 'Trámites',         desc: 'Guías y formularios' },
       { to: '/convocatorias', label: 'Convocatorias',    desc: 'Pasantías y becas' },
       { to: '/eventos',       label: 'Calendario',       desc: 'Eventos y actividades' },
-      { to: '/whatsapp',      label: 'Grupos WhatsApp',  desc: 'Por materia y semestre' },
+      { to: '/whatsapp',      label: 'Grupos WhatsApp',  desc: 'Por materia y año' },
       { to: '/biblioteca',    label: 'Biblioteca',       desc: 'Recursos digitales' },
     ],
   },

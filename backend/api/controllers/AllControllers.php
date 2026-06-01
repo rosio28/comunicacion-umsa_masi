@@ -178,7 +178,7 @@ class InstitucionalController {
         $item = $stmt->fetch();
         if (!$item) Response::error('Contenido no encontrado', 404);
         // Normalizar imagen_url si existe
-        if (!empty($item['imagen_url'])) $item['imagen_url'] = imageUrl($item['imagen_url']);
+        if (!empty($item['imagen_url'] ?? null)) $item['imagen_url'] = imageUrl($item['imagen_url']);
         Response::success($item);
     }
     public function update(string $clave): void {
@@ -900,24 +900,32 @@ class TransparenciaController {
         $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
         $d = getInputData();
         $titulo = trim($d['titulo'] ?? ''); if (!$titulo) Response::error('Título requerido');
+        $allowedTypes = ['reglamento','resolucion','acta','convocatoria','informe','plan','otro'];
+        $tipo = $d['tipo'] ?? 'otro';
+        if (!in_array($tipo, $allowedTypes, true)) Response::error('Tipo de documento inválido');
         $archivo = $d['archivo_url'] ?? null;
         if (!empty($_FILES['archivo']['tmp_name'])) { $up=uploadFile($_FILES['archivo'],'transparencia'); if($up) $archivo=$up; }
+        if (!$archivo) Response::error('Archivo o enlace directo requerido');
         $pub = toBoolStr($d['publicado'] ?? true);
         $db  = Database::getConnection();
         $db->prepare("INSERT INTO documentos_transparencia (titulo,tipo,descripcion,archivo_url,publicado_en,publicado) VALUES (?,?,?,?,?,?)")
-           ->execute([$titulo,$d['tipo']??'otro',$d['descripcion']??null,$archivo,$d['publicado_en']??date('Y-m-d'),$pub]);
+           ->execute([$titulo,$tipo,$d['descripcion']??null,$archivo,$d['publicado_en']??date('Y-m-d'),$pub]);
         Response::success(null, 'Documento agregado', 201);
     }
     public function update(int $id): void {
         $payload = Auth::requireAuth(); Auth::requireRole($payload, ['admin','superadmin']);
         $d  = getInputData();
         $db = Database::getConnection();
+        $allowedTypes = ['reglamento','resolucion','acta','convocatoria','informe','plan','otro'];
         $archivo = null;
         if (!empty($_FILES['archivo']['tmp_name'])) { $up=uploadFile($_FILES['archivo'],'transparencia'); if($up) $archivo=$up; }
         elseif (isset($d['archivo_url'])&&$d['archivo_url']!=='') $archivo=$d['archivo_url'];
         $fields = [];
         if (!empty($d['titulo']))      $fields['titulo']       = $d['titulo'];
-        if (!empty($d['tipo']))        $fields['tipo']         = $d['tipo'];
+        if (!empty($d['tipo'])) {
+            if (!in_array($d['tipo'], $allowedTypes, true)) Response::error('Tipo de documento inválido');
+            $fields['tipo']         = $d['tipo'];
+        }
         if (array_key_exists('descripcion',$d)) $fields['descripcion'] = $d['descripcion'];
         if ($archivo !== null)         $fields['archivo_url']  = $archivo;
         if (isset($d['publicado_en'])&&$d['publicado_en']!=='') $fields['publicado_en'] = $d['publicado_en'];

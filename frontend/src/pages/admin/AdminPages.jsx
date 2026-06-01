@@ -635,7 +635,7 @@ export function AdminAlumnosPage() {
           <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="label">Promedio *</label><input className="input" type="number" step="0.01" min="0" max="100" {...register('promedio', { required: true })}/></div>
-            <div><label className="label">Semestre</label><input className="input" type="number" min="1" max="10" {...register('semestre_actual')}/></div>
+            <div><label className="label">Año actual</label><input className="input" type="number" min="1" {...register('semestre_actual')}/></div>
           </div>
           <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion', { required: true })}/></div>
           <div><label className="label">Logros</label><textarea className="input h-20 resize-none" {...register('logros')}/></div>
@@ -1105,7 +1105,8 @@ export function AdminMallaPage() {
   const [confirmId, setConfirmId] = useState(null)
   const { data, isLoading } = useQuery({ queryKey: ['mat-admin'], queryFn: () => materiasService.getAll('2023') })
   const materias = data?.data?.data || []
-  const bySem = {}; for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
+  const bySem = {}; for (let i = 1; i <= 5; i++) bySem[i] = materias.filter(m => m.semestre === i && m.tipo !== 'electiva')
+  const electivas = materias.filter(m => m.tipo === 'electiva')
   const { register: rE, handleSubmit: hE, reset: resetE } = useForm()
   const { register: rN, handleSubmit: hN, reset: resetN } = useForm()
   useEffect(() => { if (editing) resetE({ nombre: editing.nombre, prerrequisitos: editing.prerrequisitos || '', area: editing.area || '', tipo: editing.tipo || 'obligatoria' }) }, [editing, resetE])
@@ -1123,7 +1124,7 @@ export function AdminMallaPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 min-w-[640px]">
             {Object.entries(bySem).map(([sem, ms]) => (
               <div key={sem}>
-                <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Semestre {sem}</div>
+                <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Año {sem}</div>
                 <div className="space-y-1.5">
                   {ms.length === 0 ? <div className="card p-3 text-center text-xs text-gray-300">—</div>
                     : ms.map(m => (
@@ -1141,6 +1142,23 @@ export function AdminMallaPage() {
               </div>
             ))}
           </div>
+          {electivas.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Electivas</h2>
+                <span className="text-sm text-gray-500">{electivas.length} materias</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {electivas.map(m => (
+                  <div key={m.id} className="card p-3 group hover:border-primary transition-colors cursor-pointer" onClick={() => setEditing(m)}>
+                    <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
+                    {m.area && <p className="text-xs text-gray-400 mt-0.5">Área {m.area}</p>}
+                    {m.semestre && <p className="text-xs text-gray-500 mt-0.5">Año {m.semestre}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       <ConfirmDialog open={!!confirmId} onClose={() => setConfirmId(null)} onConfirm={() => { delMut.mutate(confirmId); setConfirmId(null) }} title="Desactivar materia" message="¿Quitar esta materia?"/>
@@ -1164,7 +1182,7 @@ export function AdminMallaPage() {
         <form onSubmit={hN(d => newMut.mutate(d))} className="space-y-3">
           <div><label className="label">Nombre *</label><input className="input" {...rN('nombre', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })}/></div>
+            <div><label className="label">Año (1-5) *</label><input className="input" type="number" min="1" max="5" {...rN('semestre', { required: true })}/></div>
             <div>
               <label className="label">Prerrequisitos</label>
               <textarea className="input h-24 resize-none" {...rN('prerrequisitos')}/>
@@ -1405,7 +1423,7 @@ export function AdminWhatsappPage() {
       {isLoading ? <LoadingCenter/> : (
         <div className="card overflow-hidden">
           <table className="table-pro w-full">
-            <thead><tr><th>Materia</th><th>Sem.</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+            <thead><tr><th>Materia</th><th>Año</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
             <tbody>
               {list.length === 0 && <tr><td colSpan={5} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
               {list.map(g => (
@@ -1429,7 +1447,7 @@ export function AdminWhatsappPage() {
         <form onSubmit={handleSubmit(d => save.mutate(d))} className="space-y-3">
           <div><label className="label">Materia *</label><input className="input" {...register('materia_nombre', { required: true })}/></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre *</label><input className="input" type="number" min="1" max="10" {...register('semestre', { required: true })}/></div>
+            <div><label className="label">Año *</label><input className="input" type="number" min="1" {...register('semestre', { required: true })}/></div>
             <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion', { required: true })}/></div>
           </div>
           <div><label className="label">Enlace WhatsApp *</label><input className="input" type="url" placeholder="https://chat.whatsapp.com/..." {...register('enlace_wa', { required: true })}/></div>

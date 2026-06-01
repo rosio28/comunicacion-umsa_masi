@@ -15,7 +15,8 @@ define('DB_PASS',     getenv('DB_PASS') ?: '123456');
 define('DB_PORT',     getenv('DB_PORT') ?: '5432');
 
 define('JWT_SECRET',  getenv('JWT_SECRET') ?: '12345678901234567890123456789012');
-define('JWT_EXPIRY',  getenv('JWT_EXPIRY') ?: 28800);
+// JWT lifetime in seconds: 15 minutes = 900 seconds
+define('JWT_EXPIRY',  getenv('JWT_EXPIRY') ?: 900);
 
 define('FRONTEND_URL', getenv('FRONTEND_URL') ?: 'http://localhost');
 define('BACKEND_URL', getenv('BACKEND_URL') ?: 'http://localhost');

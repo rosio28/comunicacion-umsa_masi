@@ -56,6 +56,41 @@ export function AuthProvider({ children }) {
     setUsuario(null)
   }, [])
 
+  // ── Auto logout when token expires
+  useEffect(() => {
+    if (!token) return undefined
+
+    let timerId
+    try {
+      const decoded = jwtDecode(token)
+      const expiresAt = decoded.exp * 1000
+      const remaining = Math.max(0, expiresAt - Date.now())
+
+      if (remaining <= 0) {
+        logout()
+        return undefined
+      }
+
+      // Testing override: set localStorage 'ccs_test_ttl_ms' to a number (milliseconds)
+      // Example to test 2 minutes: in browser console run
+      // localStorage.setItem('ccs_test_ttl_ms', '120000')
+      const testTTLmsRaw = localStorage.getItem('ccs_test_ttl_ms')
+      const testTTLms = testTTLmsRaw ? Number(testTTLmsRaw) : null
+      const timerMs = testTTLms ? Math.min(remaining, testTTLms) : remaining
+
+      timerId = window.setTimeout(() => {
+        logout()
+      }, timerMs)
+    } catch {
+      logout()
+    }
+
+    return () => {
+      if (timerId) {
+        window.clearTimeout(timerId)
+      }
+    }
+  }, [token, logout])
   // ── Cambiar contraseña (modal obligatorio del primer ingreso)
   // FIX: después de cambiar, hacemos re-login automático con las nuevas
   // credenciales para obtener un JWT fresco sin debe_cambiar_password=true.

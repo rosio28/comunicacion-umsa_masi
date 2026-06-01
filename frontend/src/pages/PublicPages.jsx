@@ -474,7 +474,7 @@ export function MejoresAlumnosPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xl font-semibold text-gray-900 truncate">{a.nombre_completo}</p>
-                      <p className="mt-2 text-sm text-gray-500">Semestre {a.semestre_actual} · Gestión {a.gestion}</p>
+                      <p className="mt-2 text-sm text-gray-500">Año {a.semestre_actual} · Gestión {a.gestion}</p>
                       {a.logros && <p className="mt-3 text-sm text-gray-600 line-clamp-2">{a.logros}</p>}
                     </div>
                   </div>
@@ -510,7 +510,7 @@ export function MejoresAlumnosPage() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-lg font-semibold text-primary shadow-sm">{i + 1}</div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{a.nombre_completo}</p>
-                      <p className="text-sm text-gray-500 mt-1">Semestre {a.semestre_actual} · Gestión {a.gestion}</p>
+                      <p className="text-sm text-gray-500 mt-1">Año {a.semestre_actual} · Gestión {a.gestion}</p>
                       {a.logros && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{a.logros}</p>}
                     </div>
                     <div className="text-right">
@@ -1043,7 +1043,7 @@ export function WhatsappPage() {
             <h1 className="section-title">Grupos de WhatsApp por materia</h1>
             <p className="section-sub mt-4 text-gray-600">Conecta con tus compañeros en los grupos oficiales de WhatsApp de cada materia. Acceso directo, rápido y seguro.</p>
             <div className="mt-8 flex flex-wrap gap-3 text-sm text-gray-500">
-              <span className="rounded-full border border-green-200 bg-green-50 px-3 py-2 text-green-700">Organizado por semestre</span>
+              <span className="rounded-full border border-green-200 bg-green-50 px-3 py-2 text-green-700">Organizado por año</span>
               <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-primary">Únete en 1 clic</span>
             </div>
           </div>
@@ -1064,7 +1064,7 @@ export function WhatsappPage() {
                       {sem}
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">Semestre {sem}</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">Año {sem}</h2>
                       <p className="text-sm text-gray-500">{gs.length} grupo{gs.length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
@@ -1110,7 +1110,8 @@ export function MallaCurricularPage() {
   const totalMaterias = materias.length
   const totalConPrerrequisitos = materias.filter(m => m.prerrequisitos?.trim()).length
   const bySem = {}
-  for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
+  for (let i = 1; i <= 5; i++) bySem[i] = materias.filter(m => m.semestre === i && m.tipo !== 'electiva')
+  const electivas = materias.filter(m => m.tipo === 'electiva')
 
   return (
     <div className="section bg-secondary/5">
@@ -1123,7 +1124,7 @@ export function MallaCurricularPage() {
               <p className="section-sub mt-3 text-gray-600">Plan de formación de la Carrera de Comunicación Social UMSA.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-3xl bg-secondary/10 px-4 py-3 text-center text-sm font-semibold text-secondary">10 semestres</div>
+              <div className="rounded-3xl bg-secondary/10 px-4 py-3 text-center text-sm font-semibold text-secondary">5 años</div>
               <div className="rounded-3xl bg-primary/10 px-4 py-3 text-center text-sm font-semibold text-primary">{totalMaterias} materias</div>
               <div className="rounded-3xl bg-secondary/10 px-4 py-3 text-center text-sm font-semibold text-secondary">{totalConPrerrequisitos} con prerrequisitos</div>
             </div>
@@ -1138,7 +1139,7 @@ export function MallaCurricularPage() {
               {Object.entries(bySem).map(([sem, ms]) => (
                 <div key={sem} className="rounded-[30px] overflow-hidden border border-secondary/10 bg-white shadow-sm">
                   <div className="bg-secondary text-white text-center text-xs font-bold uppercase tracking-[0.18em] py-3 px-4">
-                    Semestre {sem}
+                    Año {sem}
                   </div>
                   <div className="space-y-3 p-4">
                     {ms.length === 0 ? (
@@ -1169,6 +1170,37 @@ export function MallaCurricularPage() {
                 </div>
               ))}
             </div>
+            {electivas.length > 0 && (
+              <div className="mt-8">
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Electivas</h2>
+                  <span className="text-sm text-gray-500">{electivas.length} materias</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {electivas.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelected(m)}
+                      className="group rounded-[30px] border border-secondary/10 bg-white p-4 text-left transition-all hover:border-primary/40 hover:bg-secondary/5 hover:shadow-card-md"
+                    >
+                      <div className="space-y-2">
+                        <p className="font-semibold text-sm text-gray-800 line-clamp-2 leading-snug">{m.nombre}</p>
+                        {m.area && <p className="text-xs text-gray-500">Área {m.area}</p>}
+                        {m.semestre && <p className="text-xs text-gray-500">Año {m.semestre}</p>}
+                      </div>
+                      {m.prerrequisitos && (
+                        <div className="mt-3 flex flex-col gap-2">
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                            Requisitos
+                          </span>
+                          <p className="text-xs text-gray-500 line-clamp-2">{m.prerrequisitos}</p>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1177,7 +1209,7 @@ export function MallaCurricularPage() {
           <div className="space-y-4 text-sm text-gray-700">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs text-gray-400">Semestre</p>
+                <p className="text-xs text-gray-400">Año</p>
                 <p className="font-semibold text-gray-900">{selected.semestre}</p>
               </div>
               <div>

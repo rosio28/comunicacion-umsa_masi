@@ -45,6 +45,12 @@ class NoticiasController {
             $params[]     = '%' . $_GET['q'] . '%';
         }
 
+        if (isset($_GET['destacado'])) {
+            $destacado = in_array(strtolower((string)$_GET['destacado']), ['true', '1', 't'], true);
+            $conditions[] = 'n.destacado = ?';
+            $params[]     = $destacado ? 'true' : 'false';
+        }
+
         $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
         $cs = $db->prepare("SELECT COUNT(*) FROM noticias n $where");

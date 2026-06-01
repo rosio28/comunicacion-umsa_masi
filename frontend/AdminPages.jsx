@@ -293,7 +293,7 @@ export function AdminAlumnosPage() {
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?'Editar alumno':'Agregar alumno'}>
         <form onSubmit={handleSubmit(d=>save.mutate(d))} className="space-y-3">
           <div><label className="label">Nombre completo *</label><input className="input" {...register('nombre_completo',{required:true})}/></div>
-          <div className="grid grid-cols-2 gap-3"><div><label className="label">Promedio *</label><input className="input" type="number" step="0.01" min="0" max="100" {...register('promedio',{required:true})}/></div><div><label className="label">Semestre</label><input className="input" type="number" min="1" max="10" {...register('semestre_actual')}/></div></div>
+          <div className="grid grid-cols-2 gap-3"><div><label className="label">Promedio *</label><input className="input" type="number" step="0.01" min="0" max="100" {...register('promedio',{required:true})}/></div><div><label className="label">Año</label><input className="input" type="number" min="1" max="10" {...register('semestre_actual')}/></div></div>
           <div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion',{required:true})}/></div>
           <div><label className="label">Logros</label><textarea className="input h-20 resize-none" {...register('logros')}/></div>
           <ImageField label="Foto" currentUrl={imgUrl} onFile={f=>{setImgFile(f);setImgUrl('')}} onUrl={u=>{setImgUrl(u);setImgFile(null)}}/>
@@ -390,7 +390,7 @@ export function AdminWhatsappPage() {
       </div>
       {isLoading?<LoadingCenter/>:(
         <div className="card overflow-hidden"><table className="table-pro w-full">
-          <thead><tr><th>Materia</th><th>Sem.</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
+          <thead><tr><th>Materia</th><th>Año</th><th className="hidden sm:table-cell">Gestión</th><th>Estado</th><th className="text-right pr-4">Acciones</th></tr></thead>
           <tbody>
             {list.length===0&&<tr><td colSpan={5} className="text-center py-10 text-gray-400">Sin resultados</td></tr>}
             {list.map(g=>(<tr key={g.id}>
@@ -410,7 +410,7 @@ export function AdminWhatsappPage() {
       <Modal open={modal} onClose={()=>setModal(false)} title={editing?'Editar grupo':'Nuevo grupo'}>
         <form onSubmit={handleSubmit(d=>save.mutate(d))} className="space-y-3">
           <div><label className="label">Materia *</label><input className="input" {...register('materia_nombre',{required:true})}/></div>
-          <div className="grid grid-cols-2 gap-3"><div><label className="label">Semestre *</label><input className="input" type="number" min="1" max="10" {...register('semestre',{required:true})}/></div><div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion',{required:true})}/></div></div>
+          <div className="grid grid-cols-2 gap-3"><div><label className="label">Año *</label><input className="input" type="number" min="1" max="10" {...register('semestre',{required:true})}/></div><div><label className="label">Gestión *</label><input className="input" placeholder="2026-I" {...register('gestion',{required:true})}/></div></div>
           <div><label className="label">Enlace WhatsApp *</label><input className="input" type="url" placeholder="https://chat.whatsapp.com/..." {...register('enlace_wa',{required:true})}/></div>
           {editing&&<div className="flex items-center gap-2"><input type="checkbox" id="act_wa" {...register('activo')}/><label htmlFor="act_wa" className="text-sm">Enlace activo</label></div>}
           <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">Guardar</button>
@@ -666,7 +666,7 @@ export function AdminMallaPage() {
       {isLoading?<LoadingCenter/>:(
         <div className="overflow-x-auto pb-4"><div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 min-w-[640px]">
           {Object.entries(bySem).map(([sem,ms])=>(<div key={sem}>
-            <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Semestre {sem}</div>
+            <div className="bg-secondary text-white text-center text-xs font-bold py-2.5 rounded-t-xl">Año {sem}</div>
             <div className="space-y-1.5">{ms.length===0?<div className="card p-3 text-center text-xs text-gray-300">—</div>:ms.map(m=>(
               <div key={m.id} className="card p-2.5 group hover:border-primary transition-colors cursor-pointer" onClick={()=>setEditing(m)}>
                 <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
@@ -692,7 +692,7 @@ export function AdminMallaPage() {
       <Modal open={newModal} onClose={()=>setNewModal(false)} title="Nueva materia">
         <form onSubmit={hN(d=>newMut.mutate(d))} className="space-y-3">
           <div><label className="label">Nombre *</label><input className="input" {...rN('nombre',{required:true})}/></div>
-          <div className="grid grid-cols-2 gap-3"><div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre',{required:true})}/></div><div><label className="label">Créditos</label><input className="input" type="number" {...rN('creditos')}/></div></div>
+          <div className="grid grid-cols-2 gap-3"><div><label className="label">Año (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre',{required:true})}/></div><div><label className="label">Créditos</label><input className="input" type="number" {...rN('creditos')}/></div></div>
           <div className="grid grid-cols-2 gap-3"><div><label className="label">Área</label><input className="input" {...rN('area')}/></div><div><label className="label">Tipo</label><select className="input" {...rN('tipo')}><option value="obligatoria">Obligatoria</option><option value="electiva">Electiva</option><option value="taller">Taller</option></select></div></div>
           <button type="submit" className="btn btn-primary w-full">Crear materia</button>
         </form>

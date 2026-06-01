@@ -169,7 +169,9 @@ function HeroSlider() {
 // ─── TICKER ───────────────────────────────────────────────
 function NewsTicker({ items }) {
   if (!items.length) return null
-  const doubled = [...items, ...items]
+  const repeatCount = items.length <= 2 ? 6 : items.length <= 4 ? 4 : 2
+  const repeated = Array.from({ length: repeatCount }, () => items).flat()
+
   return (
     <div className="bg-primary text-white py-2.5 overflow-hidden">
       <div className="flex items-center gap-0">
@@ -178,8 +180,8 @@ function NewsTicker({ items }) {
         </div>
         <div className="overflow-hidden flex-1">
           <div className="flex gap-12 animate-ticker whitespace-nowrap">
-            {doubled.map((n, i) => (
-              <Link key={i} to={`/noticias/${n.slug}`}
+            {repeated.map((n, i) => (
+              <Link key={`${n.slug}-${i}`} to={`/noticias/${n.slug}`}
                 className="text-sm text-white/90 hover:text-white transition-colors flex-shrink-0 hover-line">
                 {n.titulo}
               </Link>
@@ -273,22 +275,22 @@ function StatItem({ value, label, color }) {
 
 // ─── MAIN HOME ────────────────────────────────────────────
 export default function HomePage() {
-  const { data: nData }    = useQuery({ queryKey: ['noticias-home'],   queryFn: () => noticiasService.getAll({ limit: 4 }) })
-  const { data: eData }    = useQuery({ queryKey: ['eventos-home'],    queryFn: () => eventosService.getAll({ limit: 4 }) })
-  const { data: mision }   = useQuery({ queryKey: ['inst-mision'],     queryFn: () => institucionalService.get('mision') })
-  const { data: vision }   = useQuery({ queryKey: ['inst-vision'],     queryFn: () => institucionalService.get('vision') })
-  const { data: mediaData }= useQuery({ queryKey: ['media-home'],      queryFn: () => multimediaService.getAll({ limit: 4 }) })
+  const { data: nData }      = useQuery({ queryKey: ['noticias-home'], queryFn: () => noticiasService.getAll({ limit: 8 }) })
+  const { data: eData }      = useQuery({ queryKey: ['eventos-home'],  queryFn: () => eventosService.getAll({ limit: 4 }) })
+  const { data: mision }     = useQuery({ queryKey: ['inst-mision'],   queryFn: () => institucionalService.get('mision') })
+  const { data: vision }     = useQuery({ queryKey: ['inst-vision'],   queryFn: () => institucionalService.get('vision') })
+  const { data: mediaData }  = useQuery({ queryKey: ['media-home'],    queryFn: () => multimediaService.getAll({ limit: 4 }) })
 
-  const noticias  = nData?.data?.data    || []
-  const eventos   = eData?.data?.data    || []
-  const media     = mediaData?.data?.data || []
-  const featured  = noticias.find(n => n.destacado) || noticias[0]
-  const rest      = noticias.filter(n => n.id !== featured?.id).slice(0, 4)
+  const noticias      = nData?.data?.data    || []
+  const eventos       = eData?.data?.data    || []
+  const media         = mediaData?.data?.data || []
+  const featuredItems = noticias.filter(n => [true, 1, '1', 'true', 't'].includes(n.destacado))
+  const featured      = featuredItems[0]
 
   return (
     <div>
       <HeroSlider />
-      <NewsTicker items={noticias.slice(0, 6)} />
+      {featuredItems.length > 0 && <NewsTicker items={featuredItems.slice(0, 6)} />}
 
       <section className="section bg-secondary/5">
         <div className="container-main">
@@ -330,39 +332,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container-main">
-          <div className="rounded-[32px] border border-secondary/10 bg-white p-6 shadow-card-lg">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between mb-6">
-              <div>
-                <p className="eyebrow mb-1.5">Actualidad</p>
-                <h2 className="section-title">Últimas noticias</h2>
-              </div>
-              <Link to="/noticias" className="btn btn-outline btn-sm hidden sm:inline-flex">
-                Ver todas <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            {noticias.length > 0 ? (
-              <div className="grid gap-5 lg:grid-cols-[2.3fr_1fr]">
-                <div>{featured && <NewsCard n={featured} size="featured" />}</div>
-                <div className="grid gap-3">
-                  {rest.map(n => <NewsCard key={n.id} n={n} />)}
+      {featured ? (
+        <section className="section">
+          <div className="container-main">
+            <div className="rounded-[32px] border border-secondary/10 bg-white p-6 shadow-card-lg">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between mb-6">
+                <div>
+                  <p className="eyebrow mb-1.5">Actualidad</p>
+                  <h2 className="section-title">Últimas noticias</h2>
                 </div>
+                <Link to="/noticias" className="btn btn-outline btn-sm hidden sm:inline-flex">
+                  Ver todas <ChevronRight size={14} />
+                </Link>
               </div>
-            ) : (
-              <div className="text-center py-16 text-gray-400">
-                <Newspaper size={40} className="mx-auto mb-3 opacity-30" />
-                <p>Las noticias aparecerán aquí una vez publicadas.</p>
-              </div>
-            )}
 
-            <div className="mt-6 text-center sm:hidden">
-              <Link to="/noticias" className="btn btn-outline">Ver todas las noticias</Link>
+              <NewsCard n={featured} size="featured" />
+
+              <div className="mt-6 text-center sm:hidden">
+                <Link to="/noticias" className="btn btn-outline">Ver todas las noticias</Link>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="container-main">

@@ -32,6 +32,10 @@ SET titulo = 'Pensum 2023',
     actualizado_en = NOW()
 WHERE clave = 'pensum_info';
 
+-- Add imagen_url column if missing so institucional CRUD can store images
+ALTER TABLE contenido_institucional
+ADD COLUMN IF NOT EXISTS imagen_url TEXT;
+
 -- Improve existing album and gallery seed values
 UPDATE albumes
 SET nombre = 'Actividades Académicas 2026',

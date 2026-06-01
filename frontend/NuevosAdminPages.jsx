@@ -410,7 +410,7 @@ export function AdminConveniosPage() {
           </div>
           <div className="sm:col-span-2">
             <label className="label">Requisitos para postular</label>
-            <textarea className="input h-20 resize-none" placeholder="Semestre mínimo, promedio, etc." {...register('requisitos')} />
+            <textarea className="input h-20 resize-none" placeholder="Año mínimo, promedio, etc." {...register('requisitos')} />
           </div>
           <div>
             <label className="label">Nombre del contacto</label>
@@ -508,7 +508,7 @@ export function AdminMallaPageActualizada() {
             {Object.entries(bySem).map(([sem, ms]) => (
               <div key={sem}>
                 <div className={`text-white text-center text-xs font-bold py-2.5 rounded-t-xl ${pensum === '2001' ? 'bg-gray-600' : 'bg-secondary'}`}>
-                  Semestre {sem}
+                  Año {sem}
                 </div>
                 <div className="space-y-1.5">
                   {ms.length === 0
@@ -560,7 +560,7 @@ export function AdminMallaPageActualizada() {
         <form onSubmit={hN(d => newMut.mutate({ ...d, pensum }))} className="space-y-3">
           <div><label className="label">Nombre *</label><input className="input" {...rN('nombre', { required: true })} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })} /></div>
+            <div><label className="label">Año (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })} /></div>
             <div><label className="label">Créditos</label><input className="input" type="number" {...rN('creditos')} /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">

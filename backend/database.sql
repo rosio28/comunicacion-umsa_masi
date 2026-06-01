@@ -259,7 +259,7 @@ CREATE TABLE convenios (
 CREATE TABLE documentos_transparencia (
     id SERIAL PRIMARY KEY,
     titulo VARCHAR(300) NOT NULL,
-    tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('reglamento','resolucion','acta','convocatoria')),
+    tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('reglamento','resolucion','acta','convocatoria','informe','plan','otro')),
     archivo_url TEXT NOT NULL,
     publicado_en DATE NOT NULL,
     creado_en TIMESTAMP DEFAULT NOW()

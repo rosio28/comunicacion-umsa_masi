@@ -238,6 +238,7 @@ CREATE TABLE contenido_institucional (
     clave VARCHAR(50) NOT NULL UNIQUE,
     titulo VARCHAR(300),
     contenido TEXT NOT NULL,
+    imagen_url TEXT,
     actualizado_por INTEGER REFERENCES usuarios(id),
     actualizado_en TIMESTAMP DEFAULT NOW()
 );
@@ -272,7 +273,7 @@ CREATE TABLE convenios (
 CREATE TABLE documentos_transparencia (
     id SERIAL PRIMARY KEY,
     titulo VARCHAR(300) NOT NULL,
-    tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('reglamento','resolucion','acta','convocatoria')),
+    tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('reglamento','resolucion','acta','convocatoria','informe','plan','otro')),
     descripcion TEXT,
     archivo_url TEXT NOT NULL,
     publicado_en DATE NOT NULL,

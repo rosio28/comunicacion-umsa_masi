@@ -410,7 +410,7 @@ export function AdminConveniosPage() {
           </div>
           <div className="sm:col-span-2">
             <label className="label">Requisitos para postular</label>
-            <textarea className="input h-20 resize-none" placeholder="Semestre mínimo, promedio, etc." {...register('requisitos')} />
+            <textarea className="input h-20 resize-none" placeholder="Año mínimo, promedio, etc." {...register('requisitos')} />
           </div>
           <div>
             <label className="label">Nombre del contacto</label>
@@ -464,7 +464,8 @@ export function AdminMallaPageActualizada() {
   })
   const materias = data?.data || []
   const bySem = {}
-  for (let i = 1; i <= 10; i++) bySem[i] = materias.filter(m => m.semestre === i)
+  for (let i = 1; i <= 5; i++) bySem[i] = materias.filter(m => m.semestre === i && m.tipo !== 'electiva')
+  const electivas = materias.filter(m => m.tipo === 'electiva')
 
   const { register: rE, handleSubmit: hE, reset: resetE } = useForm()
   const { register: rN, handleSubmit: hN, reset: resetN } = useForm()
@@ -508,7 +509,7 @@ export function AdminMallaPageActualizada() {
             {Object.entries(bySem).map(([sem, ms]) => (
               <div key={sem}>
                 <div className={`text-white text-center text-xs font-bold py-2.5 rounded-t-xl ${pensum === '2001' ? 'bg-gray-600' : 'bg-secondary'}`}>
-                  Semestre {sem}
+                  Año {sem}
                 </div>
                 <div className="space-y-1.5">
                   {ms.length === 0
@@ -529,6 +530,23 @@ export function AdminMallaPageActualizada() {
               </div>
             ))}
           </div>
+          {electivas.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Electivas</h2>
+                <span className="text-sm text-gray-500">{electivas.length} materias</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {electivas.map(m => (
+                  <div key={m.id} className="card p-3 group hover:border-primary transition-colors cursor-pointer" onClick={() => setEditing(m)}>
+                    <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug">{m.nombre}</p>
+                    {m.area && <p className="text-xs text-gray-400 mt-0.5">Área {m.area}</p>}
+                    {m.semestre && <p className="text-xs text-gray-500 mt-0.5">Año {m.semestre}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -563,7 +581,7 @@ export function AdminMallaPageActualizada() {
         <form onSubmit={hN(d => newMut.mutate({ ...d, pensum }))} className="space-y-3">
           <div><label className="label">Nombre *</label><input className="input" {...rN('nombre', { required: true })} /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Semestre (1-10) *</label><input className="input" type="number" min="1" max="10" {...rN('semestre', { required: true })} /></div>
+            <div><label className="label">Año (1-5) *</label><input className="input" type="number" min="1" max="5" {...rN('semestre', { required: true })} /></div>
             <div>
               <label className="label">Prerrequisitos</label>
               <textarea className="input h-24 resize-none" {...rN('prerrequisitos')} />
